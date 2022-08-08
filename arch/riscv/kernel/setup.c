@@ -269,6 +269,18 @@ static void __init parse_dtb(void)
 #endif
 }
 
+#ifdef CONFIG_RISCV_COMBO_SPINLOCKS
+DEFINE_STATIC_KEY_TRUE(combo_qspinlock_key);
+EXPORT_SYMBOL(combo_qspinlock_key);
+#endif
+
+static void __init riscv_spinlock_init(void)
+{
+#ifdef CONFIG_RISCV_COMBO_SPINLOCKS
+	static_branch_disable(&combo_qspinlock_key);
+#endif
+}
+
 extern void __init init_rt_signal_env(void);
 
 void __init setup_arch(char **cmdline_p)
@@ -317,6 +329,8 @@ void __init setup_arch(char **cmdline_p)
 	    riscv_isa_extension_available(NULL, ZICBOM))
 		riscv_noncoherent_supported();
 	riscv_set_dma_cache_alignment();
+
+	riscv_spinlock_init();
 }
 
 static int __init topology_init(void)
