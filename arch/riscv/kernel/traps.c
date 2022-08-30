@@ -17,6 +17,7 @@
 #include <linux/module.h>
 #include <linux/irq.h>
 #include <linux/kexec.h>
+#include <linux/entry-common.h>
 
 #include <asm/asm-prototypes.h>
 #include <asm/bug.h>
@@ -99,10 +100,19 @@ static void do_trap_error(struct pt_regs *regs, int signo, int code,
 #else
 #define __trap_section noinstr
 #endif
-#define DO_ERROR_INFO(name, signo, code, str)				\
-asmlinkage __visible __trap_section void name(struct pt_regs *regs)	\
-{									\
-	do_trap_error(regs, signo, code, regs->epc, "Oops - " str);	\
+#define DO_ERROR_INFO(name, signo, code, str)					\
+asmlinkage __visible __trap_section void name(struct pt_regs *regs)		\
+{										\
+	if (user_mode(regs)) {							\
+		irqentry_enter_from_user_mode(regs);				\
+		do_trap_error(regs, signo, code, regs->epc, "Oops - " str);	\
+		irqentry_exit_to_user_mode(regs);				\
+	} else {								\
+		irqentry_state_t irq_state = irqentry_nmi_enter(regs);		\
+		do_trap_error(regs, signo, code, regs->epc, "Oops - " str);	\
+		irqentry_nmi_exit(regs, irq_state);				\
+	}									\
+	BUG_ON(!irqs_disabled());						\
 }
 
 DO_ERROR_INFO(do_trap_unknown,
@@ -126,18 +136,38 @@ int handle_misaligned_store(struct pt_regs *regs);
 
 asmlinkage void __trap_section do_trap_load_misaligned(struct pt_regs *regs)
 {
-	if (!handle_misaligned_load(regs))
-		return;
-	do_trap_error(regs, SIGBUS, BUS_ADRALN, regs->epc,
-		      "Oops - load address misaligned");
+	if (user_mode(regs)) {
+		irqentry_enter_from_user_mode(regs);
+		if (handle_misaligned_load(regs))
+			do_trap_error(regs, SIGBUS, BUS_ADRALN, regs->epc,
+			      "Oops - load address misaligned");
+		irqentry_exit_to_user_mode(regs);
+	} else {
+		irqentry_state_t irq_state = irqentry_nmi_enter(regs);
+		if (handle_misaligned_load(regs))
+			do_trap_error(regs, SIGBUS, BUS_ADRALN, regs->epc,
+			      "Oops - load address misaligned");
+		irqentry_nmi_exit(regs, irq_state);
+	}
+	BUG_ON(!irqs_disabled());
 }
 
 asmlinkage void __trap_section do_trap_store_misaligned(struct pt_regs *regs)
 {
-	if (!handle_misaligned_store(regs))
-		return;
-	do_trap_error(regs, SIGBUS, BUS_ADRALN, regs->epc,
-		      "Oops - store (or AMO) address misaligned");
+	if (user_mode(regs)) {
+		irqentry_enter_from_user_mode(regs);
+		if (handle_misaligned_store(regs))
+			do_trap_error(regs, SIGBUS, BUS_ADRALN, regs->epc,
+				"Oops - store (or AMO) address misaligned");
+		irqentry_exit_to_user_mode(regs);
+	} else {
+		irqentry_state_t irq_state = irqentry_nmi_enter(regs);
+		if (handle_misaligned_store(regs))
+			do_trap_error(regs, SIGBUS, BUS_ADRALN, regs->epc,
+				"Oops - store (or AMO) address misaligned");
+		irqentry_nmi_exit(regs, irq_state);
+	}
+	BUG_ON(!irqs_disabled());
 }
 #endif
 DO_ERROR_INFO(do_trap_store_fault,
@@ -159,7 +189,7 @@ static inline unsigned long get_break_insn_length(unsigned long pc)
 	return GET_INSN_LENGTH(insn);
 }
 
-asmlinkage __visible __trap_section void do_trap_break(struct pt_regs *regs)
+static void __do_trap_break(struct pt_regs *regs)
 {
 #ifdef CONFIG_KPROBES
 	if (kprobe_single_step_handler(regs))
@@ -188,6 +218,20 @@ asmlinkage __visible __trap_section void do_trap_break(struct pt_regs *regs)
 		regs->epc += get_break_insn_length(regs->epc);
 	else
 		die(regs, "Kernel BUG");
+}
+
+asmlinkage __visible __trap_section void do_trap_break(struct pt_regs *regs)
+{
+	if (user_mode(regs)) {
+		irqentry_enter_from_user_mode(regs);
+		__do_trap_break(regs);
+		irqentry_exit_to_user_mode(regs);
+	} else {
+		irqentry_state_t irq_state = irqentry_nmi_enter(regs);
+		__do_trap_break(regs);
+		irqentry_nmi_exit(regs, irq_state);
+	}
+	BUG_ON(!irqs_disabled());
 }
 NOKPROBE_SYMBOL(do_trap_break);
 

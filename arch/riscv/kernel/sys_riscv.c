@@ -5,8 +5,10 @@
  * Copyright (C) 2017 SiFive
  */
 
+#include <linux/entry-common.h>
 #include <linux/syscalls.h>
 #include <asm/unistd.h>
+#include <asm/syscall.h>
 #include <asm/cacheflush.h>
 #include <asm-generic/mman-common.h>
 
@@ -68,4 +70,31 @@ SYSCALL_DEFINE3(riscv_flush_icache, uintptr_t, start, uintptr_t, end,
 	flush_icache_mm(current->mm, flags & SYS_RISCV_FLUSH_ICACHE_LOCAL);
 
 	return 0;
+}
+
+typedef long (*syscall_t)(ulong, ulong, ulong, ulong, ulong, ulong, ulong);
+
+asmlinkage void do_sys_ecall_u(struct pt_regs *regs)
+{
+	syscall_t syscall;
+	ulong nr = regs->a7;
+
+	regs->epc += 4;
+	regs->orig_a0 = regs->a0;
+	regs->a0 = -ENOSYS;
+
+	nr = syscall_enter_from_user_mode(regs, nr);
+
+	if (nr < NR_syscalls) {
+#ifdef CONFIG_COMPAT
+		if ((regs->status & SR_UXL) == SR_UXL_32)
+			syscall = compat_sys_call_table[nr];
+		else
+#endif
+			syscall = sys_call_table[nr];
+
+		regs->a0 = syscall(regs->orig_a0, regs->a1, regs->a2,
+				   regs->a3, regs->a4, regs->a5, regs->a6);
+	}
+	syscall_exit_to_user_mode(regs);
 }
