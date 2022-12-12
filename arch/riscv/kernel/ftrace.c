@@ -10,8 +10,225 @@
 #include <linux/memory.h>
 #include <asm/cacheflush.h>
 #include <asm/patch.h>
+#include <asm/set_memory.h>
 
 #ifdef CONFIG_DYNAMIC_FTRACE
+
+#ifdef CONFIG_MODULES
+#include <linux/moduleloader.h>
+
+static inline void *alloc_tramp(unsigned long size)
+{
+	return module_alloc(size);
+}
+
+static inline void tramp_free(void *tramp)
+{
+	module_memfree(tramp);
+}
+#else
+
+static inline void *alloc_tramp(unsigned long size)
+{
+	return NULL;
+}
+
+static inline void tramp_free(void *tramp) { }
+#endif
+
+static unsigned long calc_trampoline_call_offset(bool save_regs)
+{
+	unsigned long start_offset;
+	unsigned long call_offset;
+
+	if (save_regs) {
+		start_offset = (unsigned long)ftrace_regs_caller_start;
+		call_offset = (unsigned long)ftrace_regs_call;
+	} else {
+		start_offset = (unsigned long)ftrace_caller_start;
+		call_offset = (unsigned long)ftrace_call;
+	}
+
+	return call_offset - start_offset;
+}
+
+static int __ftrace_modify_call(unsigned long hook_pos, unsigned long target,
+				bool enable, bool ra);
+#define JR_T0_C	(0x8282)
+#define JR_T0_I	(0x00028067)
+#define NOP2	(0x0001)
+
+static unsigned long
+create_trampoline(struct ftrace_ops *ops, unsigned int *tramp_size)
+{
+	unsigned long start_offset;
+	unsigned long end_offset;
+	unsigned long op_offset;
+	unsigned long call_offset;
+	unsigned long npages;
+	unsigned long size;
+	unsigned long ip;
+	void *trampoline;
+	unsigned int call[2];
+	unsigned int ops_inst[2];
+#ifdef CONFIG_RISCV_ISA_C
+	unsigned short nop[1] = {NOP2};
+	unsigned short jr_t0[1] = {JR_T0_C};
+#else
+	unsigned int nop[1] = {NOP4};
+	unsigned int jr_t0[1] = {JR_T0_I};
+#endif
+	int ret;
+
+	if (ops->flags & FTRACE_OPS_FL_SAVE_REGS) {
+		start_offset = (unsigned long)ftrace_regs_caller_start;
+		end_offset = (unsigned long)ftrace_regs_caller_end;
+		op_offset = (unsigned long)ftrace_regs_caller_op_ptr;
+		call_offset = (unsigned long)ftrace_regs_call;
+	} else {
+		start_offset = (unsigned long)ftrace_caller_start;
+		end_offset = (unsigned long)ftrace_caller_end;
+		op_offset = (unsigned long)ftrace_caller_op_ptr;
+		call_offset = (unsigned long)ftrace_call;
+	}
+
+	size = end_offset - start_offset;
+
+	*tramp_size = size + sizeof(jr_t0);
+
+	trampoline = alloc_tramp(*tramp_size);
+	if (!trampoline)
+		return 0;
+
+	// copy start_offset -- end_offset
+	ret = copy_from_kernel_nofault(trampoline, (void *)start_offset, size);
+	if (WARN_ON(ret < 0))
+		goto fail;
+
+	// copy jr t0
+	ip = (unsigned long)trampoline + size;
+	mutex_lock(&text_mutex);
+	memcpy((void *)ip, jr_t0, sizeof(jr_t0));
+	mutex_unlock(&text_mutex);
+
+	// replace function_trace_op with ops
+	op_offset -= start_offset;
+	ip = (unsigned long)trampoline + op_offset + sizeof(unsigned int);
+	make_li_a2((unsigned long)ops, ops_inst);
+
+	mutex_lock(&text_mutex);
+	memcpy((void *)ip, ops_inst, sizeof(ops_inst));
+	mutex_unlock(&text_mutex);
+
+	// replace `ld a2,0(a1)` with nop
+	ip += sizeof(ops_inst);
+
+	mutex_lock(&text_mutex);
+	memcpy((void *)ip, nop, sizeof(nop));
+	mutex_unlock(&text_mutex);
+
+	// replace ops->func
+	call_offset -= start_offset;
+	ip = (unsigned long)trampoline + call_offset;
+	make_call_ra(ip, (unsigned long)(ftrace_ops_get_func(ops)), call);
+
+	mutex_lock(&text_mutex);
+	memcpy((void *)ip, call, sizeof(call));
+	mutex_unlock(&text_mutex);
+
+	ops->flags |= FTRACE_OPS_FL_ALLOC_TRAMP;
+
+	npages = DIV_ROUND_UP(*tramp_size, PAGE_SIZE);
+
+	set_vm_flush_reset_perms(trampoline);
+
+	if (likely(system_state != SYSTEM_BOOTING))
+		set_memory_ro((unsigned long)trampoline, npages);
+	set_memory_x((unsigned long)trampoline, npages);
+
+	return (unsigned long)trampoline;
+
+fail:
+	tramp_free(trampoline);
+	return 0;
+}
+
+void arch_ftrace_update_trampoline(struct ftrace_ops *ops)
+{
+	ftrace_func_t func;
+	unsigned long offset;
+	unsigned long ip;
+	unsigned int size;
+
+	if (!ops->trampoline) {
+		ops->trampoline = create_trampoline(ops, &size);
+		if (!ops->trampoline)
+			return;
+		ops->trampoline_size = size;
+		return;
+	}
+
+	/*
+	 * The ftrace_ops caller may set up its own trampoline.
+	 * In such a case, this code must not modify it.
+	 */
+	if (!(ops->flags & FTRACE_OPS_FL_ALLOC_TRAMP))
+		return;
+
+	offset = calc_trampoline_call_offset(ops->flags & FTRACE_OPS_FL_SAVE_REGS);
+	ip = ops->trampoline + offset;
+	func = ftrace_ops_get_func(ops);
+
+	mutex_lock(&text_mutex);
+
+	__ftrace_modify_call(ip, (unsigned long)func, true, true);
+
+	mutex_unlock(&text_mutex);
+}
+
+static void *addr_from_call(void *ptr)
+{
+	unsigned int call[2];
+	unsigned long pc = (unsigned long)ptr;
+	int low_12;
+	int ret;
+
+	ret = copy_from_kernel_nofault(call, ptr, MCOUNT_INSN_SIZE);
+	if (WARN_ON_ONCE(ret < 0))
+		return NULL;
+
+	if ((call[0] & U_TYPE_BASE_MASK) != AUIPC_RA ||
+	    (call[1] & I_TYPE_BASE_MASK)  != JALR_RA)
+		return NULL;
+
+	pc += (call[0] & (~U_TYPE_BASE_MASK));
+
+	low_12 = (call[1] & (~I_TYPE_BASE_MASK)) >> I_TYPE_SHIFT;
+
+	low_12 = (low_12 & I_TYPE_SIGN_MASK) ? -(U_TYPE_PAD - low_12) : low_12;
+
+	pc += low_12;
+	pc &= ~(1 << 0);
+	return (void *)pc;
+}
+
+void *arch_ftrace_trampoline_func(struct ftrace_ops *ops, struct dyn_ftrace *rec)
+{
+	unsigned long offset;
+
+	offset = calc_trampoline_call_offset(ops->flags & FTRACE_OPS_FL_SAVE_REGS);
+	return addr_from_call((void *)ops->trampoline + offset);
+}
+
+void arch_ftrace_trampoline_free(struct ftrace_ops *ops)
+{
+	if (!ops || !(ops->flags & FTRACE_OPS_FL_ALLOC_TRAMP))
+		return;
+
+	tramp_free((void *)ops->trampoline);
+	ops->trampoline = 0;
+}
+
 void ftrace_arch_code_modify_prepare(void) __acquires(&text_mutex)
 {
 	mutex_lock(&text_mutex);
