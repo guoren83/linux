@@ -55,24 +55,42 @@ struct dyn_arch_ftrace {
  */
 
 #define MCOUNT_ADDR		((unsigned long)MCOUNT_NAME)
-#define JALR_SIGN_MASK		(0x00000800)
-#define JALR_OFFSET_MASK	(0x00000fff)
-#define AUIPC_OFFSET_MASK	(0xfffff000)
-#define AUIPC_PAD		(0x00001000)
-#define JALR_SHIFT		20
+#define I_TYPE_SIGN_MASK	(0x00000800)
+#define I_TYPE_OFFSET_MASK	(0x00000fff)
+#define I_TYPE_BASE_MASK	(0x000fffff)
+#define U_TYPE_OFFSET_MASK	(0xfffff000)
+#define U_TYPE_BASE_MASK	(0x00000fff)
+#define U_TYPE_PAD		(0x00001000)
+#define I_TYPE_SHIFT		20
 #define JALR_RA			(0x000080e7)
 #define AUIPC_RA		(0x00000097)
 #define JALR_T0			(0x000282e7)
 #define AUIPC_T0		(0x00000297)
 #define NOP4			(0x00000013)
+#define LUI_A2			(0x00000637)
+#define ADDI_A2			(0x00060613)
+
+#define to_addi_a2(addr)						\
+	(((addr & I_TYPE_OFFSET_MASK) << I_TYPE_SHIFT) | ADDI_A2)
+
+#define to_lui_a2(addr)							\
+	((addr & I_TYPE_SIGN_MASK) ?					\
+	(((addr & U_TYPE_OFFSET_MASK) + U_TYPE_PAD) | LUI_A2) :		\
+	((addr & U_TYPE_OFFSET_MASK) | LUI_A2))
+
+#define make_li_a2(addr, call)						\
+do {									\
+	call[0] = to_lui_a2(addr);					\
+	call[1] = to_addi_a2(addr);					\
+} while (0)
 
 #define to_jalr_t0(offset)						\
-	(((offset & JALR_OFFSET_MASK) << JALR_SHIFT) | JALR_T0)
+	(((offset & I_TYPE_OFFSET_MASK) << I_TYPE_SHIFT) | JALR_T0)
 
 #define to_auipc_t0(offset)						\
-	((offset & JALR_SIGN_MASK) ?					\
-	(((offset & AUIPC_OFFSET_MASK) + AUIPC_PAD) | AUIPC_T0) :	\
-	((offset & AUIPC_OFFSET_MASK) | AUIPC_T0))
+	((offset & I_TYPE_SIGN_MASK) ?					\
+	(((offset & U_TYPE_OFFSET_MASK) + U_TYPE_PAD) | AUIPC_T0) :	\
+	((offset & U_TYPE_OFFSET_MASK) | AUIPC_T0))
 
 #define make_call_t0(caller, callee, call)				\
 do {									\
@@ -83,12 +101,12 @@ do {									\
 } while (0)
 
 #define to_jalr_ra(offset)						\
-	(((offset & JALR_OFFSET_MASK) << JALR_SHIFT) | JALR_RA)
+	(((offset & I_TYPE_OFFSET_MASK) << I_TYPE_SHIFT) | JALR_RA)
 
 #define to_auipc_ra(offset)						\
-	((offset & JALR_SIGN_MASK) ?					\
-	(((offset & AUIPC_OFFSET_MASK) + AUIPC_PAD) | AUIPC_RA) :	\
-	((offset & AUIPC_OFFSET_MASK) | AUIPC_RA))
+	((offset & I_TYPE_SIGN_MASK) ?					\
+	(((offset & U_TYPE_OFFSET_MASK) + U_TYPE_PAD) | AUIPC_RA) :	\
+	((offset & U_TYPE_OFFSET_MASK) | AUIPC_RA))
 
 #define make_call_ra(caller, callee, call)				\
 do {									\
@@ -121,6 +139,13 @@ static inline void arch_ftrace_set_direct_caller(struct pt_regs *regs, unsigned 
 }
 
 #endif /* CONFIG_DYNAMIC_FTRACE_WITH_REGS */
+
+extern void ftrace_caller_start(void);
+extern void ftrace_caller_op_ptr(void);
+extern void ftrace_caller_end(void);
+extern void ftrace_regs_caller_start(void);
+extern void ftrace_regs_caller_op_ptr(void);
+extern void ftrace_regs_caller_end(void);
 
 #endif /* __ASSEMBLY__ */
 
