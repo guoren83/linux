@@ -4,7 +4,7 @@
 #define _ASM_RISCV_SPARSEMEM_H
 
 #ifdef CONFIG_SPARSEMEM
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 #define MAX_PHYSMEM_BITS	56
 #else
 #define MAX_PHYSMEM_BITS	32

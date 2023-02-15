@@ -8,7 +8,7 @@
 
 #include <asm/csr.h>
 
-typedef unsigned long cycles_t;
+typedef xlen_t cycles_t;
 
 #ifdef CONFIG_RISCV_M_MODE
 
@@ -84,7 +84,7 @@ static inline u64 get_cycles64(void)
 #define ARCH_HAS_READ_CURRENT_TIMER
 static inline int read_current_timer(unsigned long *timer_val)
 {
-	*timer_val = get_cycles();
+	*timer_val = (unsigned long)get_cycles();
 	return 0;
 }
 
