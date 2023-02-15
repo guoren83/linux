@@ -45,7 +45,7 @@
  * This decides where the kernel will search for a free chunk of vm
  * space during mmap's.
  */
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 #define TASK_UNMAPPED_BASE	PAGE_ALIGN((UL(1) << MMAP_MIN_VA_BITS) / 3)
 #else
 #define TASK_UNMAPPED_BASE	PAGE_ALIGN(TASK_SIZE / 3)
@@ -99,10 +99,10 @@ struct thread_struct {
 	/* Callee-saved registers */
 	unsigned long ra;
 	unsigned long sp;	/* Kernel mode stack */
-	unsigned long s[12];	/* s[0]: frame pointer */
+	xlen_t     s[12];	/* s[0]: frame pointer */
 	struct __riscv_d_ext_state fstate;
 	unsigned long bad_cause;
-	unsigned long envcfg;
+	xlen_t envcfg;
 	u32 riscv_v_flags;
 	u32 vstate_ctrl;
 	struct __riscv_v_ext_state vstate;
@@ -133,8 +133,8 @@ static inline void arch_thread_struct_whitelist(unsigned long *offset,
 	((struct pt_regs *)(task_stack_page(tsk) + THREAD_SIZE		\
 			    - ALIGN(sizeof(struct pt_regs), STACK_ALIGN)))
 
-#define KSTK_EIP(tsk)		(task_pt_regs(tsk)->epc)
-#define KSTK_ESP(tsk)		(task_pt_regs(tsk)->sp)
+#define KSTK_EIP(tsk)		(ulong)(task_pt_regs(tsk)->epc)
+#define KSTK_ESP(tsk)		(ulong)(task_pt_regs(tsk)->sp)
 
 
 /* Do necessary setup to start up a newly executed thread. */

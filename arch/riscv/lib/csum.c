@@ -22,7 +22,7 @@ __sum16 csum_ipv6_magic(const struct in6_addr *saddr,
 			__u32 len, __u8 proto, __wsum csum)
 {
 	unsigned int ulen, uproto;
-	unsigned long sum = (__force unsigned long)csum;
+	xlen_t sum = (__force unsigned long)csum;
 
 	sum += (__force unsigned long)saddr->s6_addr32[0];
 	sum += (__force unsigned long)saddr->s6_addr32[1];
@@ -130,7 +130,7 @@ static inline __no_sanitize_address unsigned int
 do_csum_with_alignment(const unsigned char *buff, int len)
 {
 	unsigned int offset, shift;
-	unsigned long csum, data;
+	xlen_t csum, data;
 	const unsigned long *ptr, *end;
 
 	/*
@@ -233,7 +233,7 @@ no_zbb:
 static inline __no_sanitize_address unsigned int
 do_csum_no_alignment(const unsigned char *buff, int len)
 {
-	unsigned long csum, data;
+	xlen_t csum, data;
 	const unsigned long *ptr, *end;
 
 	ptr = (const unsigned long *)(buff);

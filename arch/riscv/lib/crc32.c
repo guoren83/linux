@@ -8,6 +8,7 @@
 #include <asm/hwcap.h>
 #include <asm/alternative-macros.h>
 #include <asm/byteorder.h>
+#include <asm/csr.h>
 
 #include <linux/types.h>
 #include <linux/minmax.h>
@@ -158,13 +159,13 @@ static inline u32 crc32_le_unaligned(u32 crc, unsigned char const *p,
 				     unsigned long poly_qt)
 {
 	size_t bits = len * 8;
-	unsigned long s = 0;
+	xlen_t s = 0;
 	u32 crc_low = 0;
 
 	for (int i = 0; i < len; i++)
-		s = ((unsigned long)*p++ << (__riscv_xlen - 8)) | (s >> 8);
+		s = ((xlen_t)*p++ << (__riscv_xlen - 8)) | (s >> 8);
 
-	s ^= (unsigned long)crc << (__riscv_xlen - bits);
+	s ^= (xlen_t)crc << (__riscv_xlen - bits);
 	if (__riscv_xlen == 32 || len < sizeof(u32))
 		crc_low = crc >> bits;
 
@@ -176,7 +177,7 @@ static inline u32 crc32_le_unaligned(u32 crc, unsigned char const *p,
 
 static inline u32 __pure crc32_le_generic(u32 crc, unsigned char const *p,
 					  size_t len, u32 poly,
-					  unsigned long poly_qt,
+					  xlen_t poly_qt,
 					  fallback crc_fb)
 {
 	size_t offset, head_len, tail_len;
