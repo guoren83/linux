@@ -233,7 +233,7 @@ SYSCALL_DEFINE0(rt_sigreturn)
 	/* Always make any pending restarted system calls return -EINTR */
 	current->restart_block.fn = do_no_restart_syscall;
 
-	frame = (struct rt_sigframe __user *)regs->sp;
+	frame = (struct rt_sigframe __user *)(ulong)regs->sp;
 
 	if (!access_ok(frame, frame_size))
 		goto badframe;
@@ -259,7 +259,7 @@ badframe:
 		pr_info_ratelimited(
 			"%s[%d]: bad frame in %s: frame=%p pc=%p sp=%p\n",
 			task->comm, task_pid_nr(task), __func__,
-			frame, (void *)regs->epc, (void *)regs->sp);
+			frame, (void *)(ulong)regs->epc, (void *)(ulong)regs->sp);
 	}
 	force_sig(SIGSEGV);
 	return 0;
