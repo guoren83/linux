@@ -37,7 +37,7 @@ SYM_FUNC_START(__memset)
 	or a1, a3, a1
 	slli a3, a1, 16
 	or a1, a3, a1
-#ifdef CONFIG_64BIT
+#if __riscv_xlen == 64
 	slli a3, a1, 32
 	or a1, a3, a1
 #endif
@@ -57,7 +57,7 @@ SYM_FUNC_START(__memset)
 	/* Jump into loop body */
 	/* Assumes 32-bit instruction lengths */
 	la a5, 3f
-#ifdef CONFIG_64BIT
+#if __riscv_xlen == 64
 	srli a4, a4, 1
 #endif
 	add a5, a5, a4
