@@ -11,8 +11,11 @@
 #include <linux/types.h>
 
 struct ucontext {
-	unsigned long	  uc_flags;
-	struct ucontext	 *uc_link;
+	xlen_t		  uc_flags;
+	union {
+		struct ucontext	 *uc_link;
+		xlen_t		 pad;
+	};
 	stack_t		  uc_stack;
 	sigset_t	  uc_sigmask;
 	/*
