@@ -36,7 +36,11 @@ __sum16 csum_ipv6_magic(const struct in6_addr *saddr,
  */
 static inline __sum16 ip_fast_csum(const void *iph, unsigned int ihl)
 {
+#if __riscv_xlen == 64
+	unsigned long long csum = 0;
+#else
 	unsigned long csum = 0;
+#endif
 	int pos = 0;
 
 	do {
