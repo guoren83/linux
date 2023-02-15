@@ -35,14 +35,14 @@
 #include <asm/alternative-macros.h>
 #include <asm/hwcap.h>
 
-#if (BITS_PER_LONG == 64)
+#if (__riscv_xlen == 64)
 #define CTZW	"ctzw "
 #define CLZW	"clzw "
-#elif (BITS_PER_LONG == 32)
+#elif (__riscv_xlen == 32)
 #define CTZW	"ctz "
 #define CLZW	"clz "
 #else
-#error "Unexpected BITS_PER_LONG"
+#error "Unexpected __riscv_xlen"
 #endif
 
 static __always_inline unsigned long variable__ffs(unsigned long word)
@@ -86,7 +86,7 @@ static __always_inline unsigned long variable__fls(unsigned long word)
 		      ".option pop\n"
 		      : "=r" (word) : "r" (word) :);
 
-	return BITS_PER_LONG - 1 - word;
+	return __riscv_xlen - 1 - word;
 
 legacy:
 	return generic___fls(word);

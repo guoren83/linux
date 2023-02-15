@@ -16,7 +16,7 @@
  */
 #include <asm/bitsperlong.h>
 
-#if __BITS_PER_LONG == 64
+#if __riscv_xlen == 64
 #include <asm/unistd_64.h>
 #else
 #include <asm/unistd_32.h>
