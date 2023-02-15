@@ -138,16 +138,16 @@ enum sbi_ext_pmu_fid {
 };
 
 union sbi_pmu_ctr_info {
-	unsigned long value;
+	xlen_t value;
 	struct {
-		unsigned long csr:12;
-		unsigned long width:6;
+		xlen_t csr:12;
+		xlen_t width:6;
 #if __riscv_xlen == 32
-		unsigned long reserved:13;
+		xlen_t reserved:13;
 #else
-		unsigned long reserved:45;
+		xlen_t reserved:45;
 #endif
-		unsigned long type:1;
+		xlen_t type:1;
 	};
 };
 
@@ -422,15 +422,15 @@ enum sbi_ext_nacl_feature {
 
 extern unsigned long sbi_spec_version;
 struct sbiret {
-	long error;
-	long value;
+	xlen_t error;
+	xlen_t value;
 };
 
 void sbi_init(void);
 long __sbi_base_ecall(int fid);
-struct sbiret __sbi_ecall(unsigned long arg0, unsigned long arg1,
-			  unsigned long arg2, unsigned long arg3,
-			  unsigned long arg4, unsigned long arg5,
+struct sbiret __sbi_ecall(xlen_t arg0, xlen_t arg1,
+			  xlen_t arg2, xlen_t arg3,
+			  xlen_t arg4, xlen_t arg5,
 			  int fid, int ext);
 #define sbi_ecall(e, f, a0, a1, a2, a3, a4, a5)	\
 		__sbi_ecall(a0, a1, a2, a3, a4, a5, f, e)
