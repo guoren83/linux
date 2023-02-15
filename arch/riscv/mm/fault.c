@@ -78,7 +78,7 @@ static void die_kernel_fault(const char *msg, unsigned long addr,
 {
 	bust_spinlocks(1);
 
-	pr_alert("Unable to handle kernel %s at virtual address " REG_FMT "\n", msg,
+	pr_alert("Unable to handle kernel %s at virtual address %08lx\n", msg,
 		addr);
 
 	bust_spinlocks(0);
