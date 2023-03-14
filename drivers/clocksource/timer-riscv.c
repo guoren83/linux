@@ -49,7 +49,7 @@ static int riscv_clock_next_event(unsigned long delta,
 	u64 next_tval = get_cycles64() + delta;
 
 	if (static_branch_likely(&riscv_sstc_available)) {
-#if defined(CONFIG_32BIT)
+#if __riscv_xlen == 32
 		csr_write(CSR_STIMECMP, next_tval & 0xFFFFFFFF);
 		csr_write(CSR_STIMECMPH, next_tval >> 32);
 #else
