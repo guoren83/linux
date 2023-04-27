@@ -246,11 +246,11 @@ int kvm_riscv_vcpu_exit(struct kvm_vcpu *vcpu, struct kvm_run *run,
 	/* Print details in-case of error */
 	if (ret < 0) {
 		kvm_err("VCPU exit error %d\n", ret);
-		kvm_err("SEPC=0x%lx SSTATUS=0x%lx HSTATUS=0x%lx\n",
+		kvm_err("SEPC=0x" REG_FMT "SSTATUS=0x" REG_FMT " HSTATUS=0x" REG_FMT "\n",
 			vcpu->arch.guest_context.sepc,
 			vcpu->arch.guest_context.sstatus,
 			vcpu->arch.guest_context.hstatus);
-		kvm_err("SCAUSE=0x%lx STVAL=0x%lx HTVAL=0x%lx HTINST=0x%lx\n",
+		kvm_err("SCAUSE=0x" REG_FMT " STVAL=0x" REG_FMT " HTVAL=0x" REG_FMT " HTINST=0x" REG_FMT "\n",
 			trap->scause, trap->stval, trap->htval, trap->htinst);
 	}
 
