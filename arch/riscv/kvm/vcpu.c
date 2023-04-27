@@ -797,11 +797,11 @@ static void noinstr kvm_riscv_vcpu_enter_exit(struct kvm_vcpu *vcpu,
 		if (kvm_riscv_nacl_autoswap_csr_available()) {
 			hcntx->hstatus =
 				nacl_csr_read(nsh, CSR_HSTATUS);
-			nacl_scratch_write_long(nsh,
+			nacl_scratch_write_csr(nsh,
 						SBI_NACL_SHMEM_AUTOSWAP_OFFSET +
 						SBI_NACL_SHMEM_AUTOSWAP_HSTATUS,
 						gcntx->hstatus);
-			nacl_scratch_write_long(nsh,
+			nacl_scratch_write_csr(nsh,
 						SBI_NACL_SHMEM_AUTOSWAP_OFFSET,
 						SBI_NACL_SHMEM_AUTOSWAP_FLAG_HSTATUS);
 		} else if (kvm_riscv_nacl_sync_csr_available()) {
@@ -811,7 +811,7 @@ static void noinstr kvm_riscv_vcpu_enter_exit(struct kvm_vcpu *vcpu,
 			hcntx->hstatus = csr_swap(CSR_HSTATUS, gcntx->hstatus);
 		}
 
-		nacl_scratch_write_longs(nsh,
+		nacl_scratch_write_csrs(nsh,
 					 SBI_NACL_SHMEM_SRET_OFFSET +
 					 SBI_NACL_SHMEM_SRET_X(1),
 					 &gcntx->ra,
@@ -821,10 +821,10 @@ static void noinstr kvm_riscv_vcpu_enter_exit(struct kvm_vcpu *vcpu,
 					   SBI_EXT_NACL_SYNC_SRET);
 
 		if (kvm_riscv_nacl_autoswap_csr_available()) {
-			nacl_scratch_write_long(nsh,
+			nacl_scratch_write_csr(nsh,
 						SBI_NACL_SHMEM_AUTOSWAP_OFFSET,
 						0);
-			gcntx->hstatus = nacl_scratch_read_long(nsh,
+			gcntx->hstatus = nacl_scratch_read_csr(nsh,
 								SBI_NACL_SHMEM_AUTOSWAP_OFFSET +
 								SBI_NACL_SHMEM_AUTOSWAP_HSTATUS);
 		} else {

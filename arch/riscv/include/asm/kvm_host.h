@@ -64,8 +64,8 @@ enum kvm_riscv_hfence_type {
 
 struct kvm_riscv_hfence {
 	enum kvm_riscv_hfence_type type;
-	unsigned long asid;
-	unsigned long order;
+	xlen_t asid;
+	xlen_t order;
 	gpa_t addr;
 	gpa_t size;
 };
@@ -102,8 +102,8 @@ struct kvm_vmid {
 	 * Writes to vmid_version and vmid happen with vmid_lock held
 	 * whereas reads happen without any lock held.
 	 */
-	unsigned long vmid_version;
-	unsigned long vmid;
+	xlen_t vmid_version;
+	xlen_t vmid;
 };
 
 struct kvm_arch {
@@ -122,75 +122,75 @@ struct kvm_arch {
 };
 
 struct kvm_cpu_trap {
-	unsigned long sepc;
-	unsigned long scause;
-	unsigned long stval;
-	unsigned long htval;
-	unsigned long htinst;
+	xlen_t sepc;
+	xlen_t scause;
+	xlen_t stval;
+	xlen_t htval;
+	xlen_t htinst;
 };
 
 struct kvm_cpu_context {
-	unsigned long zero;
-	unsigned long ra;
-	unsigned long sp;
-	unsigned long gp;
-	unsigned long tp;
-	unsigned long t0;
-	unsigned long t1;
-	unsigned long t2;
-	unsigned long s0;
-	unsigned long s1;
-	unsigned long a0;
-	unsigned long a1;
-	unsigned long a2;
-	unsigned long a3;
-	unsigned long a4;
-	unsigned long a5;
-	unsigned long a6;
-	unsigned long a7;
-	unsigned long s2;
-	unsigned long s3;
-	unsigned long s4;
-	unsigned long s5;
-	unsigned long s6;
-	unsigned long s7;
-	unsigned long s8;
-	unsigned long s9;
-	unsigned long s10;
-	unsigned long s11;
-	unsigned long t3;
-	unsigned long t4;
-	unsigned long t5;
-	unsigned long t6;
-	unsigned long sepc;
-	unsigned long sstatus;
-	unsigned long hstatus;
+	xlen_t zero;
+	xlen_t ra;
+	xlen_t sp;
+	xlen_t gp;
+	xlen_t tp;
+	xlen_t t0;
+	xlen_t t1;
+	xlen_t t2;
+	xlen_t s0;
+	xlen_t s1;
+	xlen_t a0;
+	xlen_t a1;
+	xlen_t a2;
+	xlen_t a3;
+	xlen_t a4;
+	xlen_t a5;
+	xlen_t a6;
+	xlen_t a7;
+	xlen_t s2;
+	xlen_t s3;
+	xlen_t s4;
+	xlen_t s5;
+	xlen_t s6;
+	xlen_t s7;
+	xlen_t s8;
+	xlen_t s9;
+	xlen_t s10;
+	xlen_t s11;
+	xlen_t t3;
+	xlen_t t4;
+	xlen_t t5;
+	xlen_t t6;
+	xlen_t sepc;
+	xlen_t sstatus;
+	xlen_t hstatus;
 	union __riscv_fp_state fp;
 	struct __riscv_v_ext_state vector;
 };
 
 struct kvm_vcpu_csr {
-	unsigned long vsstatus;
-	unsigned long vsie;
-	unsigned long vstvec;
-	unsigned long vsscratch;
-	unsigned long vsepc;
-	unsigned long vscause;
-	unsigned long vstval;
-	unsigned long hvip;
-	unsigned long vsatp;
-	unsigned long scounteren;
-	unsigned long senvcfg;
+	xlen_t vsstatus;
+	xlen_t vsie;
+	xlen_t vstvec;
+	xlen_t vsscratch;
+	xlen_t vsepc;
+	xlen_t vscause;
+	xlen_t vstval;
+	xlen_t hvip;
+	xlen_t vsatp;
+	xlen_t scounteren;
+	xlen_t senvcfg;
 };
 
 struct kvm_vcpu_config {
 	u64 henvcfg;
 	u64 hstateen0;
-	unsigned long hedeleg;
+	xlen_t hedeleg;
 };
 
 struct kvm_vcpu_smstateen_csr {
-	unsigned long sstateen0;
+	xlen_t sstateen0;
 };
 
 struct kvm_vcpu_arch {
@@ -204,16 +204,16 @@ struct kvm_vcpu_arch {
 	DECLARE_BITMAP(isa, RISCV_ISA_EXT_MAX);
 
 	/* Vendor, Arch, and Implementation details */
-	unsigned long mvendorid;
-	unsigned long marchid;
-	unsigned long mimpid;
+	xlen_t mvendorid;
+	xlen_t marchid;
+	xlen_t mimpid;
 
 	/* SSCRATCH, STVEC, and SCOUNTEREN of Host */
-	unsigned long host_sscratch;
-	unsigned long host_stvec;
-	unsigned long host_scounteren;
-	unsigned long host_senvcfg;
-	unsigned long host_sstateen0;
+	xlen_t host_sscratch;
+	xlen_t host_stvec;
+	xlen_t host_scounteren;
+	xlen_t host_senvcfg;
+	xlen_t host_sstateen0;
 
 	/* CPU context of Host */
 	struct kvm_cpu_context host_context;
@@ -252,8 +252,8 @@ struct kvm_vcpu_arch {
 
 	/* HFENCE request queue */
 	spinlock_t hfence_lock;
-	unsigned long hfence_head;
-	unsigned long hfence_tail;
+	xlen_t hfence_head;
+	xlen_t hfence_tail;
 	struct kvm_riscv_hfence hfence_queue[KVM_RISCV_VCPU_MAX_HFENCE];
 
 	/* MMIO instruction details */
@@ -305,24 +305,24 @@ static inline void kvm_arch_sync_events(struct kvm *kvm) {}
 
 #define KVM_RISCV_GSTAGE_TLB_MIN_ORDER		12
 
-void kvm_riscv_local_hfence_gvma_vmid_gpa(unsigned long vmid,
+void kvm_riscv_local_hfence_gvma_vmid_gpa(xlen_t vmid,
 					  gpa_t gpa, gpa_t gpsz,
-					  unsigned long order);
-void kvm_riscv_local_hfence_gvma_vmid_all(unsigned long vmid);
+					  xlen_t order);
+void kvm_riscv_local_hfence_gvma_vmid_all(xlen_t vmid);
 void kvm_riscv_local_hfence_gvma_gpa(gpa_t gpa, gpa_t gpsz,
-				     unsigned long order);
+				     xlen_t order);
 void kvm_riscv_local_hfence_gvma_all(void);
-void kvm_riscv_local_hfence_vvma_asid_gva(unsigned long vmid,
-					  unsigned long asid,
-					  unsigned long gva,
-					  unsigned long gvsz,
-					  unsigned long order);
-void kvm_riscv_local_hfence_vvma_asid_all(unsigned long vmid,
-					  unsigned long asid);
-void kvm_riscv_local_hfence_vvma_gva(unsigned long vmid,
-				     unsigned long gva, unsigned long gvsz,
-				     unsigned long order);
-void kvm_riscv_local_hfence_vvma_all(unsigned long vmid);
+void kvm_riscv_local_hfence_vvma_asid_gva(xlen_t vmid,
+					  xlen_t asid,
+					  xlen_t gva,
+					  xlen_t gvsz,
+					  xlen_t order);
+void kvm_riscv_local_hfence_vvma_asid_all(xlen_t vmid,
+					  xlen_t asid);
+void kvm_riscv_local_hfence_vvma_gva(xlen_t vmid,
+				     xlen_t gva, xlen_t gvsz,
+				     xlen_t order);
+void kvm_riscv_local_hfence_vvma_all(xlen_t vmid);
 
 void kvm_riscv_local_tlb_sanitize(struct kvm_vcpu *vcpu);
 
@@ -332,26 +332,26 @@ void kvm_riscv_hfence_vvma_all_process(struct kvm_vcpu *vcpu);
 void kvm_riscv_hfence_process(struct kvm_vcpu *vcpu);
 
 void kvm_riscv_fence_i(struct kvm *kvm,
-		       unsigned long hbase, unsigned long hmask);
+		       xlen_t hbase, xlen_t hmask);
 void kvm_riscv_hfence_gvma_vmid_gpa(struct kvm *kvm,
-				    unsigned long hbase, unsigned long hmask,
+				    xlen_t hbase, xlen_t hmask,
 				    gpa_t gpa, gpa_t gpsz,
-				    unsigned long order);
+				    xlen_t order);
 void kvm_riscv_hfence_gvma_vmid_all(struct kvm *kvm,
-				    unsigned long hbase, unsigned long hmask);
+				    xlen_t hbase, xlen_t hmask);
 void kvm_riscv_hfence_vvma_asid_gva(struct kvm *kvm,
-				    unsigned long hbase, unsigned long hmask,
-				    unsigned long gva, unsigned long gvsz,
-				    unsigned long order, unsigned long asid);
+				    xlen_t hbase, xlen_t hmask,
+				    xlen_t gva, xlen_t gvsz,
+				    xlen_t order, xlen_t asid);
 void kvm_riscv_hfence_vvma_asid_all(struct kvm *kvm,
-				    unsigned long hbase, unsigned long hmask,
-				    unsigned long asid);
+				    xlen_t hbase, xlen_t hmask,
+				    xlen_t asid);
 void kvm_riscv_hfence_vvma_gva(struct kvm *kvm,
-			       unsigned long hbase, unsigned long hmask,
-			       unsigned long gva, unsigned long gvsz,
-			       unsigned long order);
+			       xlen_t hbase, xlen_t hmask,
+			       xlen_t gva, xlen_t gvsz,
+			       xlen_t order);
 void kvm_riscv_hfence_vvma_all(struct kvm *kvm,
-			       unsigned long hbase, unsigned long hmask);
+			       xlen_t hbase, xlen_t hmask);
 
 int kvm_riscv_gstage_ioremap(struct kvm *kvm, gpa_t gpa,
 			     phys_addr_t hpa, unsigned long size,
@@ -369,7 +369,7 @@ unsigned long __init kvm_riscv_gstage_mode(void);
 int kvm_riscv_gstage_gpa_bits(void);
 
 void __init kvm_riscv_gstage_vmid_detect(void);
-unsigned long kvm_riscv_gstage_vmid_bits(void);
+xlen_t kvm_riscv_gstage_vmid_bits(void);
 int kvm_riscv_gstage_vmid_init(struct kvm *kvm);
 bool kvm_riscv_gstage_vmid_ver_changed(struct kvm_vmid *vmid);
 void kvm_riscv_gstage_vmid_update(struct kvm_vcpu *vcpu);

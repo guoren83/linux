@@ -48,13 +48,13 @@ struct kvm_sregs {
 
 /* CONFIG registers for KVM_GET_ONE_REG and KVM_SET_ONE_REG */
 struct kvm_riscv_config {
-	unsigned long isa;
-	unsigned long zicbom_block_size;
-	unsigned long mvendorid;
-	unsigned long marchid;
-	unsigned long mimpid;
-	unsigned long zicboz_block_size;
-	unsigned long satp_mode;
+	xlen_t isa;
+	xlen_t zicbom_block_size;
+	xlen_t mvendorid;
+	xlen_t marchid;
+	xlen_t mimpid;
+	xlen_t zicboz_block_size;
+	xlen_t satp_mode;
 };
 
 /* CORE registers for KVM_GET_ONE_REG and KVM_SET_ONE_REG */
@@ -69,33 +69,33 @@ struct kvm_riscv_core {
 
 /* General CSR registers for KVM_GET_ONE_REG and KVM_SET_ONE_REG */
 struct kvm_riscv_csr {
-	unsigned long sstatus;
-	unsigned long sie;
-	unsigned long stvec;
-	unsigned long sscratch;
-	unsigned long sepc;
-	unsigned long scause;
-	unsigned long stval;
-	unsigned long sip;
-	unsigned long satp;
-	unsigned long scounteren;
-	unsigned long senvcfg;
+	xlen_t sstatus;
+	xlen_t sie;
+	xlen_t stvec;
+	xlen_t sscratch;
+	xlen_t sepc;
+	xlen_t scause;
+	xlen_t stval;
+	xlen_t sip;
+	xlen_t satp;
+	xlen_t scounteren;
+	xlen_t senvcfg;
 };
 
 /* AIA CSR registers for KVM_GET_ONE_REG and KVM_SET_ONE_REG */
 struct kvm_riscv_aia_csr {
-	unsigned long siselect;
-	unsigned long iprio1;
-	unsigned long iprio2;
-	unsigned long sieh;
-	unsigned long siph;
-	unsigned long iprio1h;
-	unsigned long iprio2h;
+	xlen_t siselect;
+	xlen_t iprio1;
+	xlen_t iprio2;
+	xlen_t sieh;
+	xlen_t siph;
+	xlen_t iprio1h;
+	xlen_t iprio2h;
 };
 
 /* Smstateen CSR for KVM_GET_ONE_REG and KVM_SET_ONE_REG */
 struct kvm_riscv_smstateen_csr {
-	unsigned long sstateen0;
+	xlen_t sstateen0;
 };
 
 /* TIMER registers for KVM_GET_ONE_REG and KVM_SET_ONE_REG */
@@ -207,8 +207,8 @@ enum KVM_RISCV_SBI_EXT_ID {
 
 /* SBI STA extension registers for KVM_GET_ONE_REG and KVM_SET_ONE_REG */
 struct kvm_riscv_sbi_sta {
-	unsigned long shmem_lo;
-	unsigned long shmem_hi;
+	xlen_t shmem_lo;
+	xlen_t shmem_hi;
 };
 
 /* Possible states for kvm_riscv_timer */
