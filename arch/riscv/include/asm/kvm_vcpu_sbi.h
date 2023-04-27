@@ -27,8 +27,8 @@ struct kvm_vcpu_sbi_context {
 };
 
 struct kvm_vcpu_sbi_return {
-	unsigned long out_val;
-	unsigned long err_val;
+	xlen_t out_val;
+	xlen_t err_val;
 	struct kvm_cpu_trap *utrap;
 	bool uexit;
 };

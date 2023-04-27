@@ -50,13 +50,13 @@ struct kvm_aia {
 };
 
 struct kvm_vcpu_aia_csr {
-	unsigned long vsiselect;
-	unsigned long hviprio1;
-	unsigned long hviprio2;
-	unsigned long vsieh;
-	unsigned long hviph;
-	unsigned long hviprio1h;
-	unsigned long hviprio2h;
+	xlen_t vsiselect;
+	xlen_t hviprio1;
+	xlen_t hviprio2;
+	xlen_t vsieh;
+	xlen_t hviph;
+	xlen_t hviprio1h;
+	xlen_t hviprio2h;
 };
 
 struct kvm_vcpu_aia {
@@ -95,8 +95,8 @@ int kvm_riscv_vcpu_aia_imsic_update(struct kvm_vcpu *vcpu);
 
 #define KVM_RISCV_AIA_IMSIC_TOPEI	(ISELECT_MASK + 1)
 int kvm_riscv_vcpu_aia_imsic_rmw(struct kvm_vcpu *vcpu, unsigned long isel,
-				 unsigned long *val, unsigned long new_val,
-				 unsigned long wr_mask);
+				 xlen_t *val, xlen_t new_val,
+				 xlen_t wr_mask);
 int kvm_riscv_aia_imsic_rw_attr(struct kvm *kvm, unsigned long type,
 				bool write, unsigned long *val);
 int kvm_riscv_aia_imsic_has_attr(struct kvm *kvm, unsigned long type);
@@ -131,19 +131,19 @@ void kvm_riscv_vcpu_aia_load(struct kvm_vcpu *vcpu, int cpu);
 void kvm_riscv_vcpu_aia_put(struct kvm_vcpu *vcpu);
 int kvm_riscv_vcpu_aia_get_csr(struct kvm_vcpu *vcpu,
 			       unsigned long reg_num,
-			       unsigned long *out_val);
+			       xlen_t *out_val);
 int kvm_riscv_vcpu_aia_set_csr(struct kvm_vcpu *vcpu,
 			       unsigned long reg_num,
-			       unsigned long val);
+			       xlen_t val);
 
 int kvm_riscv_vcpu_aia_rmw_topei(struct kvm_vcpu *vcpu,
 				 unsigned int csr_num,
-				 unsigned long *val,
-				 unsigned long new_val,
-				 unsigned long wr_mask);
+				 xlen_t *val,
+				 xlen_t new_val,
+				 xlen_t wr_mask);
 int kvm_riscv_vcpu_aia_rmw_ireg(struct kvm_vcpu *vcpu, unsigned int csr_num,
-				unsigned long *val, unsigned long new_val,
-				unsigned long wr_mask);
+				xlen_t *val, xlen_t new_val,
+				xlen_t wr_mask);
 #define KVM_RISCV_VCPU_AIA_CSR_FUNCS \
 { .base = CSR_SIREG,      .count = 1, .func = kvm_riscv_vcpu_aia_rmw_ireg }, \
 { .base = CSR_STOPEI,     .count = 1, .func = kvm_riscv_vcpu_aia_rmw_topei },
