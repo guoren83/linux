@@ -200,31 +200,31 @@ void kvm_riscv_vcpu_aia_put(struct kvm_vcpu *vcpu)
 
 int kvm_riscv_vcpu_aia_get_csr(struct kvm_vcpu *vcpu,
 			       unsigned long reg_num,
-			       unsigned long *out_val)
+			       xlen_t *out_val)
 {
 	struct kvm_vcpu_aia_csr *csr = &vcpu->arch.aia_context.guest_csr;
 
-	if (reg_num >= sizeof(struct kvm_riscv_aia_csr) / sizeof(unsigned long))
+	if (reg_num >= sizeof(struct kvm_riscv_aia_csr) / sizeof(xlen_t))
 		return -ENOENT;
 
 	*out_val = 0;
 	if (kvm_riscv_aia_available())
-		*out_val = ((unsigned long *)csr)[reg_num];
+		*out_val = ((xlen_t *)csr)[reg_num];
 
 	return 0;
 }
 
 int kvm_riscv_vcpu_aia_set_csr(struct kvm_vcpu *vcpu,
 			       unsigned long reg_num,
-			       unsigned long val)
+			       xlen_t val)
 {
 	struct kvm_vcpu_aia_csr *csr = &vcpu->arch.aia_context.guest_csr;
 
-	if (reg_num >= sizeof(struct kvm_riscv_aia_csr) / sizeof(unsigned long))
+	if (reg_num >= sizeof(struct kvm_riscv_aia_csr) / sizeof(xlen_t))
 		return -ENOENT;
 
 	if (kvm_riscv_aia_available()) {
-		((unsigned long *)csr)[reg_num] = val;
+		((xlen_t *)csr)[reg_num] = val;
 
 #ifdef CONFIG_32BIT
 		if (reg_num == KVM_REG_RISCV_CSR_AIA_REG(siph))
@@ -237,9 +237,9 @@ int kvm_riscv_vcpu_aia_set_csr(struct kvm_vcpu *vcpu,
 
 int kvm_riscv_vcpu_aia_rmw_topei(struct kvm_vcpu *vcpu,
 				 unsigned int csr_num,
-				 unsigned long *val,
-				 unsigned long new_val,
-				 unsigned long wr_mask)
+				 xlen_t *val,
+				 xlen_t new_val,
+				 xlen_t wr_mask)
 {
 	/* If AIA not available then redirect trap */
 	if (!kvm_riscv_aia_available())
@@ -271,7 +271,7 @@ static int aia_irq2bitpos[] = {
 
 static u8 aia_get_iprio8(struct kvm_vcpu *vcpu, unsigned int irq)
 {
-	unsigned long hviprio;
+	xlen_t hviprio;
 	int bitpos = aia_irq2bitpos[irq];
 
 	if (bitpos < 0)
@@ -396,8 +396,8 @@ static int aia_rmw_iprio(struct kvm_vcpu *vcpu, unsigned int isel,
 }
 
 int kvm_riscv_vcpu_aia_rmw_ireg(struct kvm_vcpu *vcpu, unsigned int csr_num,
-				unsigned long *val, unsigned long new_val,
-				unsigned long wr_mask)
+				xlen_t *val, xlen_t new_val,
+				xlen_t wr_mask)
 {
 	unsigned int isel;
 
@@ -408,7 +408,7 @@ int kvm_riscv_vcpu_aia_rmw_ireg(struct kvm_vcpu *vcpu, unsigned int csr_num,
 	/* First try to emulate in kernel space */
 	isel = ncsr_read(CSR_VSISELECT) & ISELECT_MASK;
 	if (isel >= ISELECT_IPRIO0 && isel <= ISELECT_IPRIO15)
-		return aia_rmw_iprio(vcpu, isel, val, new_val, wr_mask);
+		return aia_rmw_iprio(vcpu, isel, (ulong *)val, new_val, wr_mask);
 	else if (isel >= IMSIC_FIRST && isel <= IMSIC_LAST &&
 		 kvm_riscv_aia_initialized(vcpu->kvm))
 		return kvm_riscv_vcpu_aia_imsic_rmw(vcpu, isel, val, new_val,

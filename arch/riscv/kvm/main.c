@@ -152,7 +152,7 @@ static int __init riscv_kvm_init(void)
 	}
 	kvm_info("using %s G-stage page table format\n", str);
 
-	kvm_info("VMID %ld bits available\n", kvm_riscv_gstage_vmid_bits());
+	kvm_info("VMID %ld bits available\n", (ulong)kvm_riscv_gstage_vmid_bits());
 
 	if (kvm_riscv_aia_available())
 		kvm_info("AIA available with %d guest external interrupts\n",

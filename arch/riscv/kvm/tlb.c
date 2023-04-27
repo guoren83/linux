@@ -18,9 +18,9 @@
 
 #define has_svinval()	riscv_has_extension_unlikely(RISCV_ISA_EXT_SVINVAL)
 
-void kvm_riscv_local_hfence_gvma_vmid_gpa(unsigned long vmid,
+void kvm_riscv_local_hfence_gvma_vmid_gpa(xlen_t vmid,
 					  gpa_t gpa, gpa_t gpsz,
-					  unsigned long order)
+					  xlen_t order)
 {
 	gpa_t pos;
 
@@ -42,13 +42,13 @@ void kvm_riscv_local_hfence_gvma_vmid_gpa(unsigned long vmid,
 	}
 }
 
-void kvm_riscv_local_hfence_gvma_vmid_all(unsigned long vmid)
+void kvm_riscv_local_hfence_gvma_vmid_all(xlen_t vmid)
 {
 	asm volatile(HFENCE_GVMA(zero, %0) : : "r" (vmid) : "memory");
 }
 
 void kvm_riscv_local_hfence_gvma_gpa(gpa_t gpa, gpa_t gpsz,
-				     unsigned long order)
+				     xlen_t order)
 {
 	gpa_t pos;
 
@@ -75,13 +75,14 @@ void kvm_riscv_local_hfence_gvma_all(void)
 	asm volatile(HFENCE_GVMA(zero, zero) : : : "memory");
 }
 
-void kvm_riscv_local_hfence_vvma_asid_gva(unsigned long vmid,
-					  unsigned long asid,
-					  unsigned long gva,
-					  unsigned long gvsz,
-					  unsigned long order)
+void kvm_riscv_local_hfence_vvma_asid_gva(xlen_t vmid,
+					  xlen_t asid,
+					  xlen_t gva,
+					  xlen_t gvsz,
+					  xlen_t order)
 {
-	unsigned long pos, hgatp;
+	xlen_t pos;
+	xlen_t hgatp;
 
 	if (PTRS_PER_PTE < (gvsz >> order)) {
 		kvm_riscv_local_hfence_vvma_asid_all(vmid, asid);
@@ -105,10 +106,10 @@ void kvm_riscv_local_hfence_vvma_asid_gva(unsigned long vmid,
 	csr_write(CSR_HGATP, hgatp);
 }
 
-void kvm_riscv_local_hfence_vvma_asid_all(unsigned long vmid,
-					  unsigned long asid)
+void kvm_riscv_local_hfence_vvma_asid_all(xlen_t vmid,
+					  xlen_t asid)
 {
-	unsigned long hgatp;
+	xlen_t hgatp;
 
 	hgatp = csr_swap(CSR_HGATP, vmid << HGATP_VMID_SHIFT);
 
@@ -117,11 +118,12 @@ void kvm_riscv_local_hfence_vvma_asid_all(unsigned long vmid,
 	csr_write(CSR_HGATP, hgatp);
 }
 
-void kvm_riscv_local_hfence_vvma_gva(unsigned long vmid,
-				     unsigned long gva, unsigned long gvsz,
-				     unsigned long order)
+void kvm_riscv_local_hfence_vvma_gva(xlen_t vmid,
+				     xlen_t gva, xlen_t gvsz,
+				     xlen_t order)
 {
-	unsigned long pos, hgatp;
+	xlen_t pos;
+	xlen_t hgatp;
 
 	if (PTRS_PER_PTE < (gvsz >> order)) {
 		kvm_riscv_local_hfence_vvma_all(vmid);
@@ -145,9 +147,9 @@ void kvm_riscv_local_hfence_vvma_gva(unsigned long vmid,
 	csr_write(CSR_HGATP, hgatp);
 }
 
-void kvm_riscv_local_hfence_vvma_all(unsigned long vmid)
+void kvm_riscv_local_hfence_vvma_all(xlen_t vmid)
 {
-	unsigned long hgatp;
+	xlen_t hgatp;
 
 	hgatp = csr_swap(CSR_HGATP, vmid << HGATP_VMID_SHIFT);
 
@@ -158,7 +160,7 @@ void kvm_riscv_local_hfence_vvma_all(unsigned long vmid)
 
 void kvm_riscv_local_tlb_sanitize(struct kvm_vcpu *vcpu)
 {
-	unsigned long vmid;
+	xlen_t vmid;
 
 	if (!kvm_riscv_gstage_vmid_bits() ||
 	    vcpu->arch.last_exit_cpu == vcpu->cpu)
@@ -188,7 +190,7 @@ void kvm_riscv_fence_i_process(struct kvm_vcpu *vcpu)
 void kvm_riscv_hfence_gvma_vmid_all_process(struct kvm_vcpu *vcpu)
 {
 	struct kvm_vmid *v = &vcpu->kvm->arch.vmid;
-	unsigned long vmid = READ_ONCE(v->vmid);
+	xlen_t vmid = READ_ONCE(v->vmid);
 
 	if (kvm_riscv_nacl_available())
 		nacl_hfence_gvma_vmid_all(nacl_shmem(), vmid);
@@ -199,7 +201,7 @@ void kvm_riscv_hfence_gvma_vmid_all_process(struct kvm_vcpu *vcpu)
 void kvm_riscv_hfence_vvma_all_process(struct kvm_vcpu *vcpu)
 {
 	struct kvm_vmid *v = &vcpu->kvm->arch.vmid;
-	unsigned long vmid = READ_ONCE(v->vmid);
+	xlen_t vmid = READ_ONCE(v->vmid);
 
 	if (kvm_riscv_nacl_available())
 		nacl_hfence_vvma_all(nacl_shmem(), vmid);
@@ -258,7 +260,7 @@ static bool vcpu_hfence_enqueue(struct kvm_vcpu *vcpu,
 
 void kvm_riscv_hfence_process(struct kvm_vcpu *vcpu)
 {
-	unsigned long vmid;
+	xlen_t vmid;
 	struct kvm_riscv_hfence d = { 0 };
 	struct kvm_vmid *v = &vcpu->kvm->arch.vmid;
 
@@ -310,7 +312,7 @@ void kvm_riscv_hfence_process(struct kvm_vcpu *vcpu)
 }
 
 static void make_xfence_request(struct kvm *kvm,
-				unsigned long hbase, unsigned long hmask,
+				xlen_t hbase, xlen_t hmask,
 				unsigned int req, unsigned int fallback_req,
 				const struct kvm_riscv_hfence *data)
 {
@@ -346,16 +348,16 @@ static void make_xfence_request(struct kvm *kvm,
 }
 
 void kvm_riscv_fence_i(struct kvm *kvm,
-		       unsigned long hbase, unsigned long hmask)
+		       xlen_t hbase, xlen_t hmask)
 {
 	make_xfence_request(kvm, hbase, hmask, KVM_REQ_FENCE_I,
 			    KVM_REQ_FENCE_I, NULL);
 }
 
 void kvm_riscv_hfence_gvma_vmid_gpa(struct kvm *kvm,
-				    unsigned long hbase, unsigned long hmask,
+				    xlen_t hbase, xlen_t hmask,
 				    gpa_t gpa, gpa_t gpsz,
-				    unsigned long order)
+				    xlen_t order)
 {
 	struct kvm_riscv_hfence data;
 
@@ -369,16 +371,16 @@ void kvm_riscv_hfence_gvma_vmid_gpa(struct kvm *kvm,
 }
 
 void kvm_riscv_hfence_gvma_vmid_all(struct kvm *kvm,
-				    unsigned long hbase, unsigned long hmask)
+				    xlen_t hbase, xlen_t hmask)
 {
 	make_xfence_request(kvm, hbase, hmask, KVM_REQ_HFENCE_GVMA_VMID_ALL,
 			    KVM_REQ_HFENCE_GVMA_VMID_ALL, NULL);
 }
 
 void kvm_riscv_hfence_vvma_asid_gva(struct kvm *kvm,
-				    unsigned long hbase, unsigned long hmask,
-				    unsigned long gva, unsigned long gvsz,
-				    unsigned long order, unsigned long asid)
+				    xlen_t hbase, xlen_t hmask,
+				    xlen_t gva, xlen_t gvsz,
+				    xlen_t order, xlen_t asid)
 {
 	struct kvm_riscv_hfence data;
 
@@ -392,8 +394,8 @@ void kvm_riscv_hfence_vvma_asid_gva(struct kvm *kvm,
 }
 
 void kvm_riscv_hfence_vvma_asid_all(struct kvm *kvm,
-				    unsigned long hbase, unsigned long hmask,
-				    unsigned long asid)
+				    xlen_t hbase, xlen_t hmask,
+				    xlen_t asid)
 {
 	struct kvm_riscv_hfence data;
 
@@ -405,9 +407,9 @@ void kvm_riscv_hfence_vvma_asid_all(struct kvm *kvm,
 }
 
 void kvm_riscv_hfence_vvma_gva(struct kvm *kvm,
-			       unsigned long hbase, unsigned long hmask,
-			       unsigned long gva, unsigned long gvsz,
-			       unsigned long order)
+			       xlen_t hbase, xlen_t hmask,
+			       xlen_t gva, xlen_t gvsz,
+			       xlen_t order)
 {
 	struct kvm_riscv_hfence data;
 
@@ -421,7 +423,7 @@ void kvm_riscv_hfence_vvma_gva(struct kvm *kvm,
 }
 
 void kvm_riscv_hfence_vvma_all(struct kvm *kvm,
-			       unsigned long hbase, unsigned long hmask)
+			       xlen_t hbase, xlen_t hmask)
 {
 	make_xfence_request(kvm, hbase, hmask, KVM_REQ_HFENCE_VVMA_ALL,
 			    KVM_REQ_HFENCE_VVMA_ALL, NULL);

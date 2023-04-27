@@ -74,8 +74,8 @@ struct kvm_pmu {
 
 int kvm_riscv_vcpu_pmu_incr_fw(struct kvm_vcpu *vcpu, unsigned long fid);
 int kvm_riscv_vcpu_pmu_read_hpm(struct kvm_vcpu *vcpu, unsigned int csr_num,
-				unsigned long *val, unsigned long new_val,
-				unsigned long wr_mask);
+				xlen_t *val, xlen_t new_val,
+				xlen_t wr_mask);
 
 int kvm_riscv_vcpu_pmu_num_ctrs(struct kvm_vcpu *vcpu, struct kvm_vcpu_sbi_return *retdata);
 int kvm_riscv_vcpu_pmu_ctr_info(struct kvm_vcpu *vcpu, unsigned long cidx,
@@ -106,8 +106,8 @@ struct kvm_pmu {
 };
 
 static inline int kvm_riscv_vcpu_pmu_read_legacy(struct kvm_vcpu *vcpu, unsigned int csr_num,
-						 unsigned long *val, unsigned long new_val,
-						 unsigned long wr_mask)
+						 xlen_t *val, xlen_t new_val,
+						 xlen_t wr_mask)
 {
 	if (csr_num == CSR_CYCLE || csr_num == CSR_INSTRET) {
 		*val = 0;
