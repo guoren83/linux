@@ -100,7 +100,7 @@ do {									\
 
 #define nacl_hfence_mkconfig(__type, __order, __vmid, __asid)		\
 ({									\
-	unsigned long __c = SBI_NACL_SHMEM_HFENCE_CONFIG_PEND;		\
+	xlen_t __c = SBI_NACL_SHMEM_HFENCE_CONFIG_PEND;		\
 	__c |= ((__type) & SBI_NACL_SHMEM_HFENCE_CONFIG_TYPE_MASK)	\
 		<< SBI_NACL_SHMEM_HFENCE_CONFIG_TYPE_SHIFT;		\
 	__c |= (((__order) - SBI_NACL_SHMEM_HFENCE_ORDER_BASE) &	\

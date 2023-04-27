@@ -81,14 +81,15 @@ void kvm_riscv_local_hfence_vvma_asid_gva(unsigned long vmid,
 					  unsigned long gvsz,
 					  unsigned long order)
 {
-	unsigned long pos, hgatp;
+	unsigned long pos;
+	xlen_t hgatp;
 
 	if (PTRS_PER_PTE < (gvsz >> order)) {
 		kvm_riscv_local_hfence_vvma_asid_all(vmid, asid);
 		return;
 	}
 
-	hgatp = csr_swap(CSR_HGATP, vmid << HGATP_VMID_SHIFT);
+	hgatp = csr_swap(CSR_HGATP, (xlen_t)vmid << HGATP_VMID_SHIFT);
 
 	if (has_svinval()) {
 		asm volatile (SFENCE_W_INVAL() ::: "memory");
@@ -108,9 +109,9 @@ void kvm_riscv_local_hfence_vvma_asid_gva(unsigned long vmid,
 void kvm_riscv_local_hfence_vvma_asid_all(unsigned long vmid,
 					  unsigned long asid)
 {
-	unsigned long hgatp;
+	xlen_t hgatp;
 
-	hgatp = csr_swap(CSR_HGATP, vmid << HGATP_VMID_SHIFT);
+	hgatp = csr_swap(CSR_HGATP, (xlen_t)vmid << HGATP_VMID_SHIFT);
 
 	asm volatile(HFENCE_VVMA(zero, %0) : : "r" (asid) : "memory");
 
@@ -121,14 +122,15 @@ void kvm_riscv_local_hfence_vvma_gva(unsigned long vmid,
 				     unsigned long gva, unsigned long gvsz,
 				     unsigned long order)
 {
-	unsigned long pos, hgatp;
+	unsigned long pos;
+	xlen_t hgatp;
 
 	if (PTRS_PER_PTE < (gvsz >> order)) {
 		kvm_riscv_local_hfence_vvma_all(vmid);
 		return;
 	}
 
-	hgatp = csr_swap(CSR_HGATP, vmid << HGATP_VMID_SHIFT);
+	hgatp = csr_swap(CSR_HGATP, (xlen_t)vmid << HGATP_VMID_SHIFT);
 
 	if (has_svinval()) {
 		asm volatile (SFENCE_W_INVAL() ::: "memory");
@@ -147,9 +149,9 @@ void kvm_riscv_local_hfence_vvma_gva(unsigned long vmid,
 
 void kvm_riscv_local_hfence_vvma_all(unsigned long vmid)
 {
-	unsigned long hgatp;
+	xlen_t hgatp;
 
-	hgatp = csr_swap(CSR_HGATP, vmid << HGATP_VMID_SHIFT);
+	hgatp = csr_swap(CSR_HGATP, (xlen_t)vmid << HGATP_VMID_SHIFT);
 
 	asm volatile(HFENCE_VVMA(zero, zero) : : : "memory");
 
