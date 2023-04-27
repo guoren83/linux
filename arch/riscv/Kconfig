@@ -416,6 +416,15 @@ config ARCH_RV64I
 
 endchoice
 
+config ABI_RV64ILP32
+	bool "ABI RV64ILP32"
+	depends on ARCH_RV64I
+	help
+	  Expand the ARCH_RV64I base by introducing ABI_RV64ILP32 for s64ilp32,
+	  enabling s64ilp32 compilation in arch/riscv/Makefile.
+
+	  If unsure, say N.
+
 # We must be able to map all physical memory into the kernel, but the compiler
 # is still a bit more efficient when generating code if it's setup in a manner
 # such that it can only map 2GiB of memory.
