@@ -30,16 +30,29 @@ ifeq ($(CONFIG_ARCH_RV64I),y)
 	BITS := 64
 	UTS_MACHINE := riscv64
 
+ifeq ($(CONFIG_ABI_RV64ILP32),y)
+	KBUILD_CPPFLAGS += -mabi=ilp32
+
+	KBUILD_CFLAGS += -mabi=ilp32
+	KBUILD_AFLAGS += -mabi=ilp32
+
+	KBUILD_LDFLAGS += -melf32lriscv
+else
+	KBUILD_CPPFLAGS += -mabi=lp64
+
 	KBUILD_CFLAGS += -mabi=lp64
 	KBUILD_AFLAGS += -mabi=lp64
 
 	KBUILD_LDFLAGS += -melf64lriscv
+endif
 
 	KBUILD_RUSTFLAGS += -Ctarget-cpu=generic-rv64 --target=riscv64imac-unknown-none-elf \
 			    -Cno-redzone
 else
 	BITS := 32
 	UTS_MACHINE := riscv32
+
+	KBUILD_CPPFLAGS += -mabi=ilp32
 
 	KBUILD_CFLAGS += -mabi=ilp32
 	KBUILD_AFLAGS += -mabi=ilp32
@@ -223,6 +236,10 @@ rv32_defconfig:
 PHONY += rv32_nommu_virt_defconfig
 rv32_nommu_virt_defconfig:
 	$(Q)$(MAKE) -f $(srctree)/Makefile nommu_virt_defconfig 32-bit.config
+
+PHONY += rv64ilp32_defconfig
+rv64ilp32_defconfig:
+	$(Q)$(MAKE) -f $(srctree)/Makefile defconfig rv64ilp32.config
 
 define archhelp
   echo  '  Image		- Uncompressed kernel image (arch/riscv/boot/Image)'
