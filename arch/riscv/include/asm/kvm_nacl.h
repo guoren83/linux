@@ -68,26 +68,26 @@ int kvm_riscv_nacl_init(void);
 #define nacl_shmem()							\
 	this_cpu_ptr(&kvm_riscv_nacl)->shmem
 
-#define nacl_scratch_read_long(__shmem, __offset)			\
+#define nacl_scratch_read_csr(__shmem, __offset)			\
 ({									\
-	unsigned long *__p = (__shmem) +				\
+	xlen_t *__p = (__shmem) +					\
 			     SBI_NACL_SHMEM_SCRATCH_OFFSET +		\
 			     (__offset);				\
 	lelong_to_cpu(*__p);						\
 })
 
-#define nacl_scratch_write_long(__shmem, __offset, __val)		\
+#define nacl_scratch_write_csr(__shmem, __offset, __val)		\
 do {									\
-	unsigned long *__p = (__shmem) +				\
+	xlen_t *__p = (__shmem) +					\
 			     SBI_NACL_SHMEM_SCRATCH_OFFSET +		\
 			     (__offset);				\
 	*__p = cpu_to_lelong(__val);					\
 } while (0)
 
-#define nacl_scratch_write_longs(__shmem, __offset, __array, __count)	\
+#define nacl_scratch_write_csrs(__shmem, __offset, __array, __count)	\
 do {									\
 	unsigned int __i;						\
-	unsigned long *__p = (__shmem) +				\
+	xlen_t *__p = (__shmem) +					\
 			     SBI_NACL_SHMEM_SCRATCH_OFFSET +		\
 			     (__offset);				\
 	for (__i = 0; __i < (__count); __i++)				\
@@ -100,7 +100,7 @@ do {									\
 
 #define nacl_hfence_mkconfig(__type, __order, __vmid, __asid)		\
 ({									\
-	unsigned long __c = SBI_NACL_SHMEM_HFENCE_CONFIG_PEND;		\
+	xlen_t __c = SBI_NACL_SHMEM_HFENCE_CONFIG_PEND;		\
 	__c |= ((__type) & SBI_NACL_SHMEM_HFENCE_CONFIG_TYPE_MASK)	\
 		<< SBI_NACL_SHMEM_HFENCE_CONFIG_TYPE_SHIFT;		\
 	__c |= (((__order) - SBI_NACL_SHMEM_HFENCE_ORDER_BASE) &	\
@@ -168,7 +168,7 @@ __kvm_riscv_nacl_hfence(__shmem,					\
 
 #define nacl_csr_read(__shmem, __csr)					\
 ({									\
-	unsigned long *__a = (__shmem) + SBI_NACL_SHMEM_CSR_OFFSET;	\
+	xlen_t *__a = (__shmem) + SBI_NACL_SHMEM_CSR_OFFSET;		\
 	lelong_to_cpu(__a[SBI_NACL_SHMEM_CSR_INDEX(__csr)]);		\
 })
 
@@ -176,7 +176,7 @@ __kvm_riscv_nacl_hfence(__shmem,					\
 do {									\
 	void *__s = (__shmem);						\
 	unsigned int __i = SBI_NACL_SHMEM_CSR_INDEX(__csr);		\
-	unsigned long *__a = (__s) + SBI_NACL_SHMEM_CSR_OFFSET;		\
+	xlen_t *__a = (__s) + SBI_NACL_SHMEM_CSR_OFFSET;		\
 	u8 *__b = (__s) + SBI_NACL_SHMEM_DBITMAP_OFFSET;		\
 	__a[__i] = cpu_to_lelong(__val);				\
 	__b[__i >> 3] |= 1U << (__i & 0x7);				\
@@ -186,9 +186,9 @@ do {									\
 ({									\
 	void *__s = (__shmem);						\
 	unsigned int __i = SBI_NACL_SHMEM_CSR_INDEX(__csr);		\
-	unsigned long *__a = (__s) + SBI_NACL_SHMEM_CSR_OFFSET;		\
+	xlen_t *__a = (__s) + SBI_NACL_SHMEM_CSR_OFFSET;		\
 	u8 *__b = (__s) + SBI_NACL_SHMEM_DBITMAP_OFFSET;		\
-	unsigned long __r = lelong_to_cpu(__a[__i]);			\
+	xlen_t __r = lelong_to_cpu(__a[__i]);			\
 	__a[__i] = cpu_to_lelong(__val);				\
 	__b[__i >> 3] |= 1U << (__i & 0x7);				\
 	__r;								\
@@ -210,7 +210,7 @@ do {									\
 
 #define ncsr_read(__csr)						\
 ({									\
-	unsigned long __r;						\
+	xlen_t __r;							\
 	if (kvm_riscv_nacl_available())					\
 		__r = nacl_csr_read(nacl_shmem(), __csr);		\
 	else								\
@@ -228,7 +228,7 @@ do {									\
 
 #define ncsr_swap(__csr, __val)						\
 ({									\
-	unsigned long __r;						\
+	xlen_t __r;							\
 	if (kvm_riscv_nacl_sync_csr_available())			\
 		__r = nacl_csr_swap(nacl_shmem(), __csr, __val);	\
 	else								\

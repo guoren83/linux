@@ -221,13 +221,13 @@ struct csr_func {
 	 * "struct insn_func".
 	 */
 	int (*func)(struct kvm_vcpu *vcpu, unsigned int csr_num,
-		    unsigned long *val, unsigned long new_val,
-		    unsigned long wr_mask);
+		    xlen_t *val, xlen_t new_val,
+		    xlen_t wr_mask);
 };
 
 static int seed_csr_rmw(struct kvm_vcpu *vcpu, unsigned int csr_num,
-			unsigned long *val, unsigned long new_val,
-			unsigned long wr_mask)
+			xlen_t *val, xlen_t new_val,
+			xlen_t wr_mask)
 {
 	if (!riscv_isa_extension_available(vcpu->arch.isa, ZKR))
 		return KVM_INSN_ILLEGAL_TRAP;
@@ -275,9 +275,9 @@ static int csr_insn(struct kvm_vcpu *vcpu, struct kvm_run *run, ulong insn)
 	int i, rc = KVM_INSN_ILLEGAL_TRAP;
 	unsigned int csr_num = insn >> SH_RS2;
 	unsigned int rs1_num = (insn >> SH_RS1) & MASK_RX;
-	ulong rs1_val = GET_RS1(insn, &vcpu->arch.guest_context);
+	xlen_t rs1_val = GET_RS1(insn, &vcpu->arch.guest_context);
 	const struct csr_func *tcfn, *cfn = NULL;
-	ulong val = 0, wr_mask = 0, new_val = 0;
+	xlen_t val = 0, wr_mask = 0, new_val = 0;
 
 	/* Decode the CSR instruction */
 	switch (GET_FUNCT3(insn)) {
