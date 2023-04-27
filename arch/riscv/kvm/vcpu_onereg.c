@@ -448,7 +448,7 @@ static int kvm_riscv_vcpu_set_reg_core(struct kvm_vcpu *vcpu,
 
 static int kvm_riscv_vcpu_general_get_csr(struct kvm_vcpu *vcpu,
 					  unsigned long reg_num,
-					  unsigned long *out_val)
+					  xlen_t *out_val)
 {
 	struct kvm_vcpu_csr *csr = &vcpu->arch.guest_csr;
 
@@ -494,24 +494,24 @@ static inline int kvm_riscv_vcpu_smstateen_set_csr(struct kvm_vcpu *vcpu,
 	struct kvm_vcpu_smstateen_csr *csr = &vcpu->arch.smstateen_csr;
 
 	if (reg_num >= sizeof(struct kvm_riscv_smstateen_csr) /
-		sizeof(unsigned long))
+		sizeof(xlen_t))
 		return -EINVAL;
 
-	((unsigned long *)csr)[reg_num] = reg_val;
+	((xlen_t *)csr)[reg_num] = reg_val;
 	return 0;
 }
 
 static int kvm_riscv_vcpu_smstateen_get_csr(struct kvm_vcpu *vcpu,
 					    unsigned long reg_num,
-					    unsigned long *out_val)
+					    xlen_t *out_val)
 {
 	struct kvm_vcpu_smstateen_csr *csr = &vcpu->arch.smstateen_csr;
 
 	if (reg_num >= sizeof(struct kvm_riscv_smstateen_csr) /
-		sizeof(unsigned long))
+		sizeof(xlen_t))
 		return -EINVAL;
 
-	*out_val = ((unsigned long *)csr)[reg_num];
+	*out_val = ((xlen_t *)csr)[reg_num];
 	return 0;
 }
 
@@ -519,12 +519,12 @@ static int kvm_riscv_vcpu_get_reg_csr(struct kvm_vcpu *vcpu,
 				      const struct kvm_one_reg *reg)
 {
 	int rc;
-	unsigned long __user *uaddr =
-			(unsigned long __user *)(unsigned long)reg->addr;
+	xlen_t __user *uaddr =
+			(xlen_t __user *)(unsigned long)reg->addr;
 	unsigned long reg_num = reg->id & ~(KVM_REG_ARCH_MASK |
 					    KVM_REG_SIZE_MASK |
 					    KVM_REG_RISCV_CSR);
-	unsigned long reg_val, reg_subtype;
+	xlen_t reg_val, reg_subtype;
 
 	if (KVM_REG_SIZE(reg->id) != sizeof(unsigned long))
 		return -EINVAL;

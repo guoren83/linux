@@ -198,7 +198,7 @@ static int pmu_get_pmc_index(struct kvm_pmu *pmu, unsigned long eidx,
 }
 
 static int pmu_fw_ctr_read_hi(struct kvm_vcpu *vcpu, unsigned long cidx,
-			      unsigned long *out_val)
+			      xlen_t *out_val)
 {
 	struct kvm_pmu *kvpmu = vcpu_to_pmu(vcpu);
 	struct kvm_pmc *pmc;
@@ -228,7 +228,7 @@ static int pmu_fw_ctr_read_hi(struct kvm_vcpu *vcpu, unsigned long cidx,
 }
 
 static int pmu_ctr_read(struct kvm_vcpu *vcpu, unsigned long cidx,
-			unsigned long *out_val)
+			xlen_t *out_val)
 {
 	struct kvm_pmu *kvpmu = vcpu_to_pmu(vcpu);
 	struct kvm_pmc *pmc;
@@ -354,8 +354,8 @@ int kvm_riscv_vcpu_pmu_incr_fw(struct kvm_vcpu *vcpu, unsigned long fid)
 }
 
 int kvm_riscv_vcpu_pmu_read_hpm(struct kvm_vcpu *vcpu, unsigned int csr_num,
-				unsigned long *val, unsigned long new_val,
-				unsigned long wr_mask)
+				xlen_t *val, xlen_t new_val,
+				xlen_t wr_mask)
 {
 	struct kvm_pmu *kvpmu = vcpu_to_pmu(vcpu);
 	int cidx, ret = KVM_INSN_CONTINUE_NEXT_SEPC;
