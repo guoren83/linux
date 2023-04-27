@@ -839,8 +839,8 @@ fail_free_vsfile_hgei:
 }
 
 int kvm_riscv_vcpu_aia_imsic_rmw(struct kvm_vcpu *vcpu, unsigned long isel,
-				 unsigned long *val, unsigned long new_val,
-				 unsigned long wr_mask)
+				 xlen_t *val, xlen_t new_val,
+				 xlen_t wr_mask)
 {
 	u32 topei;
 	struct imsic_mrif_eix *eix;
@@ -866,7 +866,7 @@ int kvm_riscv_vcpu_aia_imsic_rmw(struct kvm_vcpu *vcpu, unsigned long isel,
 		}
 	} else {
 		r = imsic_mrif_rmw(imsic->swfile, imsic->nr_eix, isel,
-				   val, new_val, wr_mask);
+				   (ulong *)val, (ulong)new_val, (ulong)wr_mask);
 		/* Forward unknown IMSIC register to user-space */
 		if (r)
 			rc = (r == -ENOENT) ? 0 : KVM_INSN_ILLEGAL_TRAP;

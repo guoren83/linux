@@ -11,7 +11,7 @@ struct kvm_run;
 struct kvm_cpu_trap;
 
 struct kvm_mmio_decode {
-	unsigned long insn;
+	xlen_t insn;
 	int insn_len;
 	int len;
 	int shift;
@@ -19,7 +19,7 @@ struct kvm_mmio_decode {
 };
 
 struct kvm_csr_decode {
-	unsigned long insn;
+	xlen_t insn;
 	int return_handled;
 };
 

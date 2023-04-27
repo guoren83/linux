@@ -20,7 +20,7 @@
 #include <asm/pgtable.h>
 
 #ifdef CONFIG_64BIT
-static unsigned long gstage_mode __ro_after_init = (HGATP_MODE_SV39X4 << HGATP_MODE_SHIFT);
+static xlen_t gstage_mode __ro_after_init = (HGATP_MODE_SV39X4 << HGATP_MODE_SHIFT);
 static unsigned long gstage_pgd_levels __ro_after_init = 3;
 #define gstage_index_bits	9
 #else
@@ -30,11 +30,11 @@ static unsigned long gstage_pgd_levels __ro_after_init = 2;
 #endif
 
 #define gstage_pgd_xbits	2
-#define gstage_pgd_size	(1UL << (HGATP_PAGE_SHIFT + gstage_pgd_xbits))
+#define gstage_pgd_size	(_AC(1, UXL) << (HGATP_PAGE_SHIFT + gstage_pgd_xbits))
 #define gstage_gpa_bits	(HGATP_PAGE_SHIFT + \
 			 (gstage_pgd_levels * gstage_index_bits) + \
 			 gstage_pgd_xbits)
-#define gstage_gpa_size	((gpa_t)(1ULL << gstage_gpa_bits))
+#define gstage_gpa_size	((gpa_t)(_AC(1, UXL) << gstage_gpa_bits))
 
 #define gstage_pte_leaf(__ptep)	\
 	(pte_val(*(__ptep)) & (_PAGE_READ | _PAGE_WRITE | _PAGE_EXEC))
@@ -623,7 +623,7 @@ int kvm_riscv_gstage_map(struct kvm_vcpu *vcpu,
 		vma_pageshift = huge_page_shift(hstate_vma(vma));
 	else
 		vma_pageshift = PAGE_SHIFT;
-	vma_pagesize = 1ULL << vma_pageshift;
+	vma_pagesize = _AC(1, UXL) << vma_pageshift;
 	if (logging || (vma->vm_flags & VM_PFNMAP))
 		vma_pagesize = PAGE_SIZE;
 
@@ -725,7 +725,7 @@ void kvm_riscv_gstage_free_pgd(struct kvm *kvm)
 
 void kvm_riscv_gstage_update_hgatp(struct kvm_vcpu *vcpu)
 {
-	unsigned long hgatp = gstage_mode;
+	xlen_t hgatp = gstage_mode;
 	struct kvm_arch *k = &vcpu->kvm->arch;
 
 	hgatp |= (READ_ONCE(k->vmid.vmid) << HGATP_VMID_SHIFT) & HGATP_VMID;
