@@ -213,7 +213,7 @@ config RISCV
 	select TRACE_IRQFLAGS_SUPPORT
 	select UACCESS_MEMCPY if !MMU
 	select USER_STACKTRACE_SUPPORT
-	select ZONE_DMA32 if 64BIT
+	select ZONE_DMA32 if 64BIT && !ABI_RV64ILP32
 
 config RUSTC_SUPPORTS_RISCV
 	def_bool y
@@ -298,6 +298,7 @@ config PAGE_OFFSET
 config KASAN_SHADOW_OFFSET
 	hex
 	depends on KASAN_GENERIC
+	default 0x70000000 if ABI_RV64ILP32
 	default 0xdfffffff00000000 if 64BIT
 	default 0xffffffff if 32BIT
 
@@ -341,7 +342,7 @@ config FIX_EARLYCON_MEM
 
 config ILLEGAL_POINTER_VALUE
 	hex
-	default 0 if 32BIT
+	default 0 if 32BIT || ABI_RV64ILP32
 	default 0xdead000000000000 if 64BIT
 
 config PGTABLE_LEVELS
@@ -417,6 +418,13 @@ config ARCH_RV64I
 	select SWIOTLB if MMU
 
 endchoice
+
+config ABI_RV64ILP32
+	bool "ABI RV64ILP32"
+	depends on 64BIT
+	help
+	  Compile linux kernel self into RV64ILP32 ABI of RISC-V psabi
+	  specification.
 
 # We must be able to map all physical memory into the kernel, but the compiler
 # is still a bit more efficient when generating code if it's setup in a manner
