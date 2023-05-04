@@ -8,7 +8,13 @@
 
 struct stackframe {
 	unsigned long fp;
+#if (__riscv_xlen == 64) && (__SIZEOF_POINTER__ == 4)
+	unsigned long pad1;
+#endif
 	unsigned long ra;
+#if (__riscv_xlen == 64) && (__SIZEOF_POINTER__ == 4)
+	unsigned long pad2;
+#endif
 };
 
 extern void notrace walk_stackframe(struct task_struct *task, struct pt_regs *regs,
