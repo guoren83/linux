@@ -8,7 +8,13 @@
 
 struct stackframe {
 	unsigned long fp;
+#if IS_ENABLED(CONFIG_64BIT) && (BITS_PER_LONG == 32)
+	unsigned long __fp;
+#endif
 	unsigned long ra;
+#if IS_ENABLED(CONFIG_64BIT) && (BITS_PER_LONG == 32)
+	unsigned long __ra;
+#endif
 };
 
 extern void notrace walk_stackframe(struct task_struct *task, struct pt_regs *regs,
