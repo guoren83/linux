@@ -607,7 +607,11 @@ EXPORT_SYMBOL(inode_permission);
  *
  * Given a path increment the reference count to the dentry and the vfsmount.
  */
+#if defined(CONFIG_64BIT) && (BITS_PER_LONG == 32)
+void noinline path_get(const struct path *path)
+#else
 void path_get(const struct path *path)
+#endif
 {
 	mntget(path->mnt);
 	dget(path->dentry);
