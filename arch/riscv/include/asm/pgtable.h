@@ -868,6 +868,7 @@ static inline pte_t pte_swp_clear_exclusive(pte_t pte)
  * -      0x4000000000	( 256GB) for RV64 using SV39 mmu
  * -    0x800000000000	( 128TB) for RV64 using SV48 mmu
  * - 0x100000000000000	(  64PB) for RV64 using SV57 mmu
+ * -        0x80000000	(   2GB) for COMPAT and RV64ILP32
  *
  * Note that PGDIR_SIZE must evenly divide TASK_SIZE since "RISC-V
  * Instruction Set Manual Volume II: Privileged Architecture" states that
@@ -875,12 +876,13 @@ static inline pte_t pte_swp_clear_exclusive(pte_t pte)
  * 63–48 all equal to bit 47, or else a page-fault exception will occur."
  * Similarly for SV57, bits 63–57 must be equal to bit 56.
  */
+#define TASK_SIZE_32	(_AC(0x80000000, UL) - PAGE_SIZE)
+
 #ifdef CONFIG_64BIT
 #define TASK_SIZE_64	(PGDIR_SIZE * PTRS_PER_PGD / 2)
 #define TASK_SIZE_MIN	(PGDIR_SIZE_L3 * PTRS_PER_PGD / 2)
 
 #ifdef CONFIG_COMPAT
-#define TASK_SIZE_32	(_AC(0x80000000, UL) - PAGE_SIZE)
 #define TASK_SIZE	(test_thread_flag(TIF_32BIT) ? \
 			 TASK_SIZE_32 : TASK_SIZE_64)
 #else
@@ -888,7 +890,11 @@ static inline pte_t pte_swp_clear_exclusive(pte_t pte)
 #endif
 
 #else
+#ifdef CONFIG_ARCH_RV64ILP32
+#define TASK_SIZE	TASK_SIZE_32
+#else
 #define TASK_SIZE	FIXADDR_START
+#endif
 #define TASK_SIZE_MIN	TASK_SIZE
 #endif
 
