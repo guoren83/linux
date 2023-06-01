@@ -126,8 +126,13 @@
 
 #define MMAP_VA_BITS_64 ((VA_BITS >= VA_BITS_SV48) ? VA_BITS_SV48 : VA_BITS)
 #define MMAP_MIN_VA_BITS_64 (VA_BITS_SV39)
+#if __SIZEOF_POINTER__ == 8
 #define MMAP_VA_BITS (is_compat_task() ? VA_BITS_SV32 : MMAP_VA_BITS_64)
 #define MMAP_MIN_VA_BITS (is_compat_task() ? VA_BITS_SV32 : MMAP_MIN_VA_BITS_64)
+#else
+#define MMAP_VA_BITS		VA_BITS_SV32
+#define MMAP_MIN_VA_BITS	VA_BITS_SV32
+#endif
 #else
 #include <asm/pgtable-32.h>
 #endif /* CONFIG_64BIT */
@@ -915,6 +920,7 @@ static inline pte_t pte_swp_clear_exclusive(pte_t pte)
  * Note that PGDIR_SIZE must evenly divide TASK_SIZE.
  * Task size is:
  * -        0x9fc00000	(~2.5GB) for RV32.
+ * -        0x80000000	(   2GB) for RV32_COMPAT & RV64ILP32
  * -      0x4000000000	( 256GB) for RV64 using SV39 mmu
  * -    0x800000000000	( 128TB) for RV64 using SV48 mmu
  * - 0x100000000000000	(  64PB) for RV64 using SV57 mmu
@@ -929,12 +935,16 @@ static inline pte_t pte_swp_clear_exclusive(pte_t pte)
 #define TASK_SIZE_64	(PGDIR_SIZE * PTRS_PER_PGD / 2)
 #define TASK_SIZE_MAX	LONG_MAX
 
+#define TASK_SIZE_32	_AC(0x80000000, UL)
+#if __SIZEOF_POINTER__ == 8
 #ifdef CONFIG_COMPAT
-#define TASK_SIZE_32	(_AC(0x80000000, UL) - PAGE_SIZE)
 #define TASK_SIZE	(is_compat_task() ? \
 			 TASK_SIZE_32 : TASK_SIZE_64)
 #else
 #define TASK_SIZE	TASK_SIZE_64
+#endif
+#else
+#define TASK_SIZE	TASK_SIZE_32
 #endif
 
 #else
