@@ -29,7 +29,7 @@
 	} else {								\
 		u32 *__ptr32b = (u32 *)((ulong)(p) & ~0x3);			\
 		ulong __s = ((ulong)(p) & (0x4 - sizeof(*p))) * BITS_PER_BYTE;	\
-		ulong __mask = GENMASK(((sizeof(*p)) * BITS_PER_BYTE) - 1, 0)	\
+		ulong __mask = GENMASK_ULL(((sizeof(*p)) * BITS_PER_BYTE) - 1, 0)	\
 				<< __s;						\
 		ulong __newx = (ulong)(n) << __s;				\
 		ulong __retx;							\
@@ -145,7 +145,7 @@
 	} else {								\
 		u32 *__ptr32b = (u32 *)((ulong)(p) & ~0x3);			\
 		ulong __s = ((ulong)(p) & (0x4 - sizeof(*p))) * BITS_PER_BYTE;	\
-		ulong __mask = GENMASK(((sizeof(*p)) * BITS_PER_BYTE) - 1, 0)	\
+		ulong __mask = GENMASK_ULL(((sizeof(*p)) * BITS_PER_BYTE) - 1, 0)	\
 			       << __s;						\
 		ulong __newx = (ulong)(n) << __s;				\
 		ulong __oldx = (ulong)(o) << __s;				\
