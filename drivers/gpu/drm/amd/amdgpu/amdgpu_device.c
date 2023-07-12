@@ -1111,6 +1111,10 @@ int amdgpu_device_resize_fb_bar(struct amdgpu_device *adev)
 	if (!IS_ENABLED(CONFIG_PHYS_ADDR_T_64BIT))
 		return 0;
 
+#ifdef CONFIG_SOC_SOPHGO
+	return 0;
+#endif
+
 	/* Bypass for VF */
 	if (amdgpu_sriov_vf(adev))
 		return 0;
