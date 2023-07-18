@@ -104,12 +104,12 @@ old_interface:
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_32BIT) && strncasecmp(isa, "rv32ima", 7)) {
+	if (IS_ENABLED(CONFIG_RV32I) && strncasecmp(isa, "rv32ima", 7)) {
 		pr_warn("CPU with hartid=%lu does not support rv32ima", *hart);
-		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_64BIT) && strncasecmp(isa, "rv64ima", 7)) {
+	if ((IS_ENABLED(CONFIG_RV64I) || IS_ENABLED(CONFIG_RV64IILP32))
+				     && strncasecmp(isa, "rv64ima", 7)) {
 		pr_warn("CPU with hartid=%lu does not support rv64ima", *hart);
 		return -ENODEV;
 	}
