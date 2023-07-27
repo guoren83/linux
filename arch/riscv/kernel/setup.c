@@ -264,6 +264,18 @@ static void __init parse_dtb(void)
 #endif
 }
 
+#ifdef CONFIG_QUEUED_SPINLOCKS
+DEFINE_STATIC_KEY_TRUE(virt_spin_lock_key);
+
+static void __init virt_spin_lock_init(void)
+{
+	if (sbi_get_firmware_id() != SBI_EXT_BASE_IMPL_ID_KVM)
+		static_branch_disable(&virt_spin_lock_key);
+}
+#else
+static void __init virt_spin_lock_init(void) {}
+#endif
+
 extern void __init init_rt_signal_env(void);
 
 void __init setup_arch(char **cmdline_p)
@@ -276,6 +288,7 @@ void __init setup_arch(char **cmdline_p)
 	early_ioremap_setup();
 	sbi_init();
 	jump_label_init();
+	virt_spin_lock_init();
 	parse_early_param();
 
 	efi_init();
