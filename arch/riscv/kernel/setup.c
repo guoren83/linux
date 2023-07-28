@@ -328,7 +328,8 @@ early_param("qspinlock", force_queued_spinlock);
 
 void __init arch_cpu_finalize_init(void)
 {
-	if (!force_qspinlock) {
+	if (!force_qspinlock &&
+	    !riscv_has_errata_thead_qspinlock()) {
 		static_branch_disable(&qspinlock_key);
 	}
 }
