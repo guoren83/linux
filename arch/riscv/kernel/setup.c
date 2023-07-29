@@ -270,6 +270,15 @@ static void __init parse_dtb(void)
 }
 
 #ifdef CONFIG_RISCV_COMBO_SPINLOCKS
+bool enable_qspinlock_key = false;
+static int __init queued_spinlock_setup(char *p)
+{
+	enable_qspinlock_key = true;
+
+	return 0;
+}
+early_param("qspinlock", queued_spinlock_setup);
+
 DEFINE_STATIC_KEY_TRUE(combo_qspinlock_key);
 EXPORT_SYMBOL(combo_qspinlock_key);
 #endif
@@ -277,7 +286,12 @@ EXPORT_SYMBOL(combo_qspinlock_key);
 static void __init riscv_spinlock_init(void)
 {
 #ifdef CONFIG_RISCV_COMBO_SPINLOCKS
-	static_branch_disable(&combo_qspinlock_key);
+	if (!enable_qspinlock_key) {
+		static_branch_disable(&combo_qspinlock_key);
+		pr_info("Ticket spinlock: enabled\n");
+	} else {
+		pr_info("Queued spinlock: enabled\n");
+	}
 #endif
 }
 
