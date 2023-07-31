@@ -102,8 +102,8 @@ __arch_xchg(volatile void *ptr, unsigned long x, int size)
 	"	move	$t0, %z4			\n"		\
 	"	" st "	$t0, %1				\n"		\
 	"	beqz	$t0, 1b				\n"		\
-	"2:						\n"		\
 	__WEAK_LLSC_MB							\
+	"2:						\n"		\
 	: "=&r" (__ret), "=ZB"(*m)					\
 	: "ZB"(*m), "Jr" (old), "Jr" (new)				\
 	: "t0", "memory");						\
@@ -148,10 +148,8 @@ static inline unsigned int __cmpxchg_small(volatile void *ptr, unsigned int old,
 	"	or		%1, %1, %z6	\n"
 	"	sc.w		%1, %2		\n"
 	"	beqz		%1, 1b		\n"
-	"	b		3f		\n"
-	"2:					\n"
 	__WEAK_LLSC_MB
-	"3:					\n"
+	"2:					\n"
 	: "=&r" (old32), "=&r" (temp), "=ZC" (*ptr32)
 	: "ZC" (*ptr32), "Jr" (mask), "Jr" (old), "Jr" (new)
 	: "memory");
