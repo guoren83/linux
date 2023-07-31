@@ -289,6 +289,9 @@ void __init setup_arch(char **cmdline_p)
 	sbi_init();
 	jump_label_init();
 	virt_spin_lock_init();
+#ifdef CONFIG_PARAVIRT_SPINLOCKS
+	pv_qspinlock_init();
+#endif
 	parse_early_param();
 
 	efi_init();
