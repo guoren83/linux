@@ -290,6 +290,7 @@ void __init setup_arch(char **cmdline_p)
 	early_ioremap_setup();
 	sbi_init();
 	jump_label_init();
+	virt_spin_lock_init();
 	parse_early_param();
 
 	efi_init();
@@ -325,6 +326,9 @@ void __init setup_arch(char **cmdline_p)
 	if (IS_ENABLED(CONFIG_RISCV_ISA_ZICBOM) &&
 	    riscv_isa_extension_available(NULL, ZICBOM))
 		riscv_noncoherent_supported();
+#ifdef CONFIG_PARAVIRT_SPINLOCKS
+	pv_qspinlock_init();
+#endif
 	virt_spin_lock_init();
 }
 
