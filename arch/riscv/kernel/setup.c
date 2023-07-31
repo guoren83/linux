@@ -352,6 +352,10 @@ void __init arch_cpu_finalize_init(void)
 #ifdef CONFIG_QUEUED_SPINLOCKS
 	virt_spin_lock_init();
 #endif
+
+#ifdef CONFIG_PARAVIRT_SPINLOCKS
+	pv_qspinlock_init();
+#endif
 }
 
 static int __init topology_init(void)
