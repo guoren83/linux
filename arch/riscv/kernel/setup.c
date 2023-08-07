@@ -26,6 +26,7 @@
 #include <asm/alternative.h>
 #include <asm/cacheflush.h>
 #include <asm/cpu_ops.h>
+#include <asm/cpufeature.h>
 #include <asm/early_ioremap.h>
 #include <asm/pgtable.h>
 #include <asm/setup.h>
@@ -283,15 +284,42 @@ DEFINE_STATIC_KEY_TRUE(combo_qspinlock_key);
 EXPORT_SYMBOL(combo_qspinlock_key);
 #endif
 
+#ifdef CONFIG_QUEUED_SPINLOCKS
+static bool no_virt_spin_key = false;
+DEFINE_STATIC_KEY_TRUE(virt_spin_lock_key);
+
+static int __init no_virt_spin_setup(char *p)
+{
+	no_virt_spin_key = true;
+
+	return 0;
+}
+early_param("no_virt_spin", no_virt_spin_setup);
+
+static void __init virt_spin_lock_init(void)
+{
+	if (sbi_get_firmware_id() != SBI_EXT_BASE_IMPL_ID_KVM ||
+	    no_virt_spin_key)
+		static_branch_disable(&virt_spin_lock_key);
+	else
+		pr_info("Enable virt_spin_lock\n");
+}
+#endif
+
 static void __init riscv_spinlock_init(void)
 {
 #ifdef CONFIG_RISCV_COMBO_SPINLOCKS
-	if (!enable_qspinlock_key) {
+	if (!enable_qspinlock_key &&
+	    (sbi_get_firmware_id() != SBI_EXT_BASE_IMPL_ID_KVM)) {
 		static_branch_disable(&combo_qspinlock_key);
 		pr_info("Ticket spinlock: enabled\n");
 	} else {
 		pr_info("Queued spinlock: enabled\n");
 	}
+#endif
+
+#ifdef CONFIG_QUEUED_SPINLOCKS
+	virt_spin_lock_init();
 #endif
 }
 
