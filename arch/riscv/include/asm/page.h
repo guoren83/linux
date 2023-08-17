@@ -106,7 +106,7 @@ typedef struct page *pgtable_t;
  * We override this value as its generic definition uses __pa too early in
  * the boot process (before kernel_map.va_pa_offset is set).
  */
-#define MIN_MEMBLOCK_ADDR      0
+#define MIN_MEMBLOCK_ADDR      0x60400000ULL
 #endif
 
 #ifdef CONFIG_MMU
