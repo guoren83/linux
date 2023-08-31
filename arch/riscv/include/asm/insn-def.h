@@ -134,6 +134,7 @@
 
 #define RV_OPCODE_MISC_MEM	RV_OPCODE(15)
 #define RV_OPCODE_SYSTEM	RV_OPCODE(115)
+#define RV_OPCODE_PREFETCH	RV_OPCODE(19)
 
 #define HFENCE_VVMA(vaddr, asid)				\
 	INSN_R(OPCODE_SYSTEM, FUNC3(0), FUNC7(17),		\
@@ -195,5 +196,9 @@
 #define CBO_zero(base)						\
 	INSN_I(OPCODE_MISC_MEM, FUNC3(2), __RD(0),		\
 	       RS1(base), SIMM12(4))
+
+#define CBO_prefetchw(base)					\
+	INSN_R(OPCODE_PREFETCH, FUNC3(6), FUNC7(0),		\
+	       RD(x0), RS1(base), RS2(x0))
 
 #endif /* __ASM_INSN_DEF_H */

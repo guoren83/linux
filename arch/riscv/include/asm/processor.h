@@ -12,6 +12,8 @@
 #include <vdso/processor.h>
 
 #include <asm/ptrace.h>
+#include <asm/insn-def.h>
+#include <asm/hwcap.h>
 
 #ifdef CONFIG_64BIT
 #define DEFAULT_MAP_WINDOW	(UL(1) << (MMAP_VA_BITS - 1))
@@ -103,6 +105,17 @@ static inline void arch_thread_struct_whitelist(unsigned long *offset,
 #define KSTK_EIP(tsk)		(ulong)(task_pt_regs(tsk)->epc)
 #define KSTK_ESP(tsk)		(ulong)(task_pt_regs(tsk)->sp)
 
+#define ARCH_HAS_PREFETCHW
+#define PREFETCHW_ASM(base)	ALTERNATIVE(__nops(1), \
+					    CBO_prefetchw(base), \
+					    0, \
+					    RISCV_ISA_EXT_ZICBOP, \
+					    CONFIG_RISCV_ISA_ZICBOP)
+static inline void prefetchw(const void *ptr)
+{
+	asm volatile(PREFETCHW_ASM(%0)
+		: : "r" (ptr) : "memory");
+}
 
 /* Do necessary setup to start up a newly executed thread. */
 extern void start_thread(struct pt_regs *regs,
