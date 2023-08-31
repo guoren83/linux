@@ -223,7 +223,10 @@ static __always_inline void clear_pending_set_locked(struct qspinlock *lock)
  */
 static __always_inline u32 xchg_tail(struct qspinlock *lock, u32 tail)
 {
-	u32 old, new, val = atomic_read(&lock->val);
+	u32 old, new, val;
+
+	prefetchw(&lock->val);
+	val = atomic_read(&lock->val);
 
 	for (;;) {
 		new = (val & _Q_LOCKED_PENDING_MASK) | tail;
