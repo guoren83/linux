@@ -14,8 +14,9 @@
 #define __arch_xchg_masked(prepend, append, r, p, n)			\
 ({									\
 	u32 *__ptr32b = (u32 *)((ulong)(p) & ~0x3);			\
-	ulong __s = ((ulong)(p) & (0x4 - sizeof(*p))) * BITS_PER_BYTE;	\
-	ulong __mask = GENMASK(((sizeof(*p)) * BITS_PER_BYTE) - 1, 0)	\
+	ulong __size_p = (sizeof(*p) > 2) ? 2 : sizeof(*p);		\
+	ulong __s = ((ulong)(p) & (0x4 - __size_p)) * BITS_PER_BYTE;	\
+	ulong __mask = GENMASK(((__size_p) * BITS_PER_BYTE) - 1, 0)	\
 			<< __s;						\
 	ulong __newx = (ulong)(n) << __s;				\
 	ulong __retx;							\
@@ -106,8 +107,9 @@
 #define __arch_cmpxchg_masked(sc_sfx, prepend, append, r, p, o, n)	\
 ({									\
 	u32 *__ptr32b = (u32 *)((ulong)(p) & ~0x3);			\
-	ulong __s = ((ulong)(p) & (0x4 - sizeof(*p))) * BITS_PER_BYTE;	\
-	ulong __mask = GENMASK(((sizeof(*p)) * BITS_PER_BYTE) - 1, 0)	\
+	ulong __size_p = (sizeof(*p) > 2) ? 2 : sizeof(*p);		\
+	ulong __s = ((ulong)(p) & (0x4 - __size_p)) * BITS_PER_BYTE;	\
+	ulong __mask = GENMASK(((__size_p) * BITS_PER_BYTE) - 1, 0)	\
 			<< __s;						\
 	ulong __newx = (ulong)(n) << __s;				\
 	ulong __oldx = (ulong)(o) << __s;				\
