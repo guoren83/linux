@@ -210,7 +210,7 @@ int postdiv1_2[][3] = {
 	{6, 7, 42}, {7, 7, 49}
 };
 
-static inline unsigned long abs_diff(unsigned long a, unsigned long b)
+static inline unsigned long __abs_diff(unsigned long a, unsigned long b)
 {
 	return (a > b) ? (a - b) : (b - a);
 }
@@ -328,7 +328,7 @@ static int __get_pll_ctl_setting(struct mango_pll_ctrl *best,
 				continue;
 
 			tmp = foutvco / (postdiv1 * postdiv2);
-			if (abs_diff(tmp, req_rate) < abs_diff(best->freq, req_rate)) {
+			if (__abs_diff(tmp, req_rate) < __abs_diff(best->freq, req_rate)) {
 				best->freq = tmp;
 				best->refdiv = refdiv;
 				best->fbdiv = fbdiv;
