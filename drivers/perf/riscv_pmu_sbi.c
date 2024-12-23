@@ -638,7 +638,7 @@ static int pmu_sbi_snapshot_setup(struct riscv_pmu *pmu, int cpu)
 	/* Free up the snapshot area memory and fall back to SBI PMU calls without snapshot */
 	if (ret.error) {
 		if (ret.error != SBI_ERR_NOT_SUPPORTED)
-			pr_warn("pmu snapshot setup failed with error %ld\n", ret.error);
+			pr_warn("pmu snapshot setup failed with error %ld\n", (long)ret.error);
 		return sbi_err_map_linux_errno(ret.error);
 	}
 
@@ -679,7 +679,7 @@ static u64 pmu_sbi_ctr_read(struct perf_event *event)
 				val |= ((u64)ret.value << 32);
 			else
 				WARN_ONCE(1, "Unable to read upper 32 bits of firmware counter error: %ld\n",
-					  ret.error);
+					  (long)ret.error);
 		}
 	} else {
 		val = riscv_pmu_ctr_read_csr(info.csr);
