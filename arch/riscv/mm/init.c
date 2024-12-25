@@ -45,16 +45,20 @@ EXPORT_SYMBOL(kernel_map);
 #define kernel_map	(*(struct kernel_mapping *)XIP_FIXUP(&kernel_map))
 #endif
 
-#ifdef CONFIG_64BIT
+#if CONFIG_PGTABLE_LEVELS > 2
+#if BITS_PER_LONG == 64
 u64 satp_mode __ro_after_init = !IS_ENABLED(CONFIG_XIP_KERNEL) ? SATP_MODE_57 : SATP_MODE_39;
+#else
+u64 satp_mode __ro_after_init = SATP_MODE_39;
+#endif
 #else
 u64 satp_mode __ro_after_init = SATP_MODE_32;
 #endif
 EXPORT_SYMBOL(satp_mode);
 
 #ifdef CONFIG_64BIT
-bool pgtable_l4_enabled __ro_after_init = !IS_ENABLED(CONFIG_XIP_KERNEL);
-bool pgtable_l5_enabled __ro_after_init = !IS_ENABLED(CONFIG_XIP_KERNEL);
+bool pgtable_l4_enabled __ro_after_init = !IS_ENABLED(CONFIG_XIP_KERNEL) && (BITS_PER_LONG == 64);
+bool pgtable_l5_enabled __ro_after_init = !IS_ENABLED(CONFIG_XIP_KERNEL) && (BITS_PER_LONG == 64);
 EXPORT_SYMBOL(pgtable_l4_enabled);
 EXPORT_SYMBOL(pgtable_l5_enabled);
 #endif
@@ -109,7 +113,7 @@ static inline void print_mlg(char *name, unsigned long b, unsigned long t)
 		   (((t) - (b)) >> LOG2_SZ_1G));
 }
 
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 static inline void print_mlt(char *name, unsigned long b, unsigned long t)
 {
 	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld TB)\n", name, b, t,
@@ -123,7 +127,7 @@ static inline void print_ml(char *name, unsigned long b, unsigned long t)
 {
 	unsigned long diff = t - b;
 
-	if (IS_ENABLED(CONFIG_64BIT) && (diff >> LOG2_SZ_1T) >= 10)
+	if ((BITS_PER_LONG == 64) && (diff >> LOG2_SZ_1T) >= 10)
 		print_mlt(name, b, t);
 	else if ((diff >> LOG2_SZ_1G) >= 10)
 		print_mlg(name, b, t);
@@ -669,16 +673,26 @@ void __meminit create_pgd_mapping(pgd_t *pgdp, uintptr_t va, phys_addr_t pa, phy
 	pgd_next_t *nextp;
 	phys_addr_t next_phys;
 	uintptr_t pgd_idx = pgd_index(va);
+#if (CONFIG_PGTABLE_LEVELS > 2) && (BITS_PER_LONG == 32)
+	uintptr_t pgd_idh = pgd_index(sign_extend64((u64)va, 31));
+#endif
 
 	if (sz == PGDIR_SIZE) {
-		if (pgd_val(pgdp[pgd_idx]) == 0)
+		if (pgd_val(pgdp[pgd_idx]) == 0) {
 			pgdp[pgd_idx] = pfn_pgd(PFN_DOWN(pa), prot);
+#if (CONFIG_PGTABLE_LEVELS > 2) && (BITS_PER_LONG == 32)
+			pgdp[pgd_idh] = pfn_pgd(PFN_DOWN(pa), prot);
+#endif
+		}
 		return;
 	}
 
 	if (pgd_val(pgdp[pgd_idx]) == 0) {
 		next_phys = alloc_pgd_next(va);
 		pgdp[pgd_idx] = pfn_pgd(PFN_DOWN(next_phys), PAGE_TABLE);
+#if (CONFIG_PGTABLE_LEVELS > 2) && (BITS_PER_LONG == 32)
+		pgdp[pgd_idh] = pfn_pgd(PFN_DOWN(next_phys), PAGE_TABLE);
+#endif
 		nextp = get_pgd_next_virt(next_phys);
 		memset(nextp, 0, PAGE_SIZE);
 	} else {
@@ -759,7 +773,7 @@ static __meminit pgprot_t pgprot_from_va(uintptr_t va)
 }
 #endif /* CONFIG_STRICT_KERNEL_RWX */
 
-#if defined(CONFIG_64BIT) && !defined(CONFIG_XIP_KERNEL)
+#if (BITS_PER_LONG == 64) && !defined(CONFIG_XIP_KERNEL)
 u64 __pi_set_satp_mode_from_cmdline(uintptr_t dtb_pa);
 
 static void __init disable_pgtable_l5(void)
@@ -965,8 +979,8 @@ static void __init create_fdt_early_page_table(uintptr_t fix_fdt_va,
 	/* Make sure the fdt fixmap address is always aligned on PMD size */
 	BUILD_BUG_ON(FIX_FDT % (PMD_SIZE / PAGE_SIZE));
 
-	/* In 32-bit only, the fdt lies in its own PGD */
-	if (!IS_ENABLED(CONFIG_64BIT)) {
+	/* In Sv32 only, the fdt lies in its own PGD */
+	if (CONFIG_PGTABLE_LEVELS == 2) {
 		create_pgd_mapping(early_pg_dir, fix_fdt_va,
 				   pa, MAX_FDT_SIZE, PAGE_KERNEL);
 	} else {
@@ -1114,7 +1128,7 @@ asmlinkage void __init setup_vm(uintptr_t dtb_pa)
 	kernel_map.va_kernel_pa_offset = kernel_map.virt_addr - kernel_map.phys_addr;
 #endif
 
-#if defined(CONFIG_64BIT) && !defined(CONFIG_XIP_KERNEL)
+#if (BITS_PER_LONG == 64) && !defined(CONFIG_XIP_KERNEL)
 	set_satp_mode(dtb_pa);
 	set_mmap_rnd_bits_max();
 #endif
@@ -1227,7 +1241,7 @@ asmlinkage void __init setup_vm(uintptr_t dtb_pa)
 	fix_bmap_epmd = fixmap_pmd[pmd_index(__fix_to_virt(FIX_BTMAP_END))];
 	if (pmd_val(fix_bmap_spmd) != pmd_val(fix_bmap_epmd)) {
 		WARN_ON(1);
-		pr_warn("fixmap btmap start [%08lx] != end [%08lx]\n",
+		pr_warn("fixmap btmap start [" PTE_FMT "] != end [" PTE_FMT "]\n",
 			pmd_val(fix_bmap_spmd), pmd_val(fix_bmap_epmd));
 		pr_warn("fix_to_virt(FIX_BTMAP_BEGIN): %08lx\n",
 			fix_to_virt(FIX_BTMAP_BEGIN));
@@ -1317,7 +1331,7 @@ static void __init create_linear_mapping_page_table(void)
 static void __init setup_vm_final(void)
 {
 	/* Setup swapper PGD for fixmap */
-#if !defined(CONFIG_64BIT)
+#if CONFIG_PGTABLE_LEVELS == 2
 	/*
 	 * In 32-bit, the device tree lies in a pgd entry, so it must be copied
 	 * directly in swapper_pg_dir in addition to the pgd entry that points
@@ -1335,7 +1349,7 @@ static void __init setup_vm_final(void)
 	create_linear_mapping_page_table();
 
 	/* Map the kernel */
-	if (IS_ENABLED(CONFIG_64BIT))
+	if (CONFIG_PGTABLE_LEVELS > 2)
 		create_kernel_page_table(swapper_pg_dir, false);
 
 #ifdef CONFIG_KASAN
