@@ -40,25 +40,25 @@ static void show_pte(unsigned long addr)
 
 	pgdp = pgd_offset(mm, addr);
 	pgd = pgdp_get(pgdp);
-	pr_alert("[%016lx] pgd=%016lx", addr, pgd_val(pgd));
+	pr_alert("[%016lx] pgd=" REG_FMT, addr, pgd_val(pgd));
 	if (pgd_none(pgd) || pgd_bad(pgd) || pgd_leaf(pgd))
 		goto out;
 
 	p4dp = p4d_offset(pgdp, addr);
 	p4d = p4dp_get(p4dp);
-	pr_cont(", p4d=%016lx", p4d_val(p4d));
+	pr_cont(", p4d=" REG_FMT, p4d_val(p4d));
 	if (p4d_none(p4d) || p4d_bad(p4d) || p4d_leaf(p4d))
 		goto out;
 
 	pudp = pud_offset(p4dp, addr);
 	pud = pudp_get(pudp);
-	pr_cont(", pud=%016lx", pud_val(pud));
+	pr_cont(", pud=" REG_FMT, pud_val(pud));
 	if (pud_none(pud) || pud_bad(pud) || pud_leaf(pud))
 		goto out;
 
 	pmdp = pmd_offset(pudp, addr);
 	pmd = pmdp_get(pmdp);
-	pr_cont(", pmd=%016lx", pmd_val(pmd));
+	pr_cont(", pmd=" REG_FMT, pmd_val(pmd));
 	if (pmd_none(pmd) || pmd_bad(pmd) || pmd_leaf(pmd))
 		goto out;
 
@@ -67,7 +67,7 @@ static void show_pte(unsigned long addr)
 		goto out;
 
 	pte = ptep_get(ptep);
-	pr_cont(", pte=%016lx", pte_val(pte));
+	pr_cont(", pte=" REG_FMT, pte_val(pte));
 	pte_unmap(ptep);
 out:
 	pr_cont("\n");
