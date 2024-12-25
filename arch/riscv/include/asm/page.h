@@ -24,7 +24,7 @@
  * When not using MMU this corresponds to the first free page in
  * physical memory (aligned on a page boundary).
  */
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 #ifdef CONFIG_MMU
 #define PAGE_OFFSET		kernel_map.page_offset
 #else
@@ -38,7 +38,7 @@
 #define PAGE_OFFSET_L3		_AC(0xffffffd600000000, UL)
 #else
 #define PAGE_OFFSET		_AC(CONFIG_PAGE_OFFSET, UL)
-#endif /* CONFIG_64BIT */
+#endif /* BITS_PER_LONG == 64 */
 
 #ifndef __ASSEMBLY__
 
@@ -56,19 +56,24 @@ void clear_page(void *page);
 /*
  * Use struct definitions to apply C type checking
  */
+#if CONFIG_PGTABLE_LEVELS > 2
+typedef	u64 ptval_t;
+#else
+typedef	ulong ptval_t;
+#endif
 
 /* Page Global Directory entry */
 typedef struct {
-	unsigned long pgd;
+	ptval_t pgd;
 } pgd_t;
 
 /* Page Table entry */
 typedef struct {
-	unsigned long pte;
+	ptval_t pte;
 } pte_t;
 
 typedef struct {
-	unsigned long pgprot;
+	ptval_t pgprot;
 } pgprot_t;
 
 typedef struct page *pgtable_t;
@@ -81,13 +86,13 @@ typedef struct page *pgtable_t;
 #define __pgd(x)	((pgd_t) { (x) })
 #define __pgprot(x)	((pgprot_t) { (x) })
 
-#ifdef CONFIG_64BIT
-#define PTE_FMT "%016lx"
+#if CONFIG_PGTABLE_LEVELS > 2
+#define PTE_FMT "%016llx"
 #else
 #define PTE_FMT "%08lx"
 #endif
 
-#if defined(CONFIG_64BIT) && defined(CONFIG_MMU)
+#if (CONFIG_PGTABLE_LEVELS > 2) && defined(CONFIG_MMU)
 /*
  * We override this value as its generic definition uses __pa too early in
  * the boot process (before kernel_map.va_pa_offset is set).
@@ -128,7 +133,7 @@ extern unsigned long vmemmap_start_pfn;
 	((x) >= kernel_map.virt_addr && (x) < (kernel_map.virt_addr + kernel_map.size))
 
 #define is_linear_mapping(x)	\
-	((x) >= PAGE_OFFSET && (!IS_ENABLED(CONFIG_64BIT) || (x) < PAGE_OFFSET + KERN_VIRT_SIZE))
+	((x) >= PAGE_OFFSET && ((BITS_PER_LONG == 32) || (x) < PAGE_OFFSET + KERN_VIRT_SIZE))
 
 #ifndef CONFIG_DEBUG_VIRTUAL
 #define linear_mapping_pa_to_va(x)	((void *)((unsigned long)(x) + kernel_map.va_pa_offset))
