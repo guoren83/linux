@@ -19,7 +19,12 @@ extern bool pgtable_l5_enabled;
 #define PGDIR_SHIFT     (pgtable_l5_enabled ? PGDIR_SHIFT_L5 : \
 		(pgtable_l4_enabled ? PGDIR_SHIFT_L4 : PGDIR_SHIFT_L3))
 /* Size of region mapped by a page global directory */
+#if (__SIZEOF_POINTER__ == 8) && (__riscv_xlen == 64)
 #define PGDIR_SIZE      (_AC(1, UL) << PGDIR_SHIFT)
+#else
+#define PGDIR_SIZE      (_AC(1, ULL) << PGDIR_SHIFT)
+#endif
+
 #define PGDIR_MASK      (~(PGDIR_SIZE - 1))
 
 /* p4d is folded into pgd in case of 4-level page table */
@@ -28,22 +33,22 @@ extern bool pgtable_l5_enabled;
 #define P4D_SHIFT_L5   39
 #define P4D_SHIFT      (pgtable_l5_enabled ? P4D_SHIFT_L5 : \
 		(pgtable_l4_enabled ? P4D_SHIFT_L4 : P4D_SHIFT_L3))
-#define P4D_SIZE       (_AC(1, UL) << P4D_SHIFT)
+#define P4D_SIZE       (_AC(1, ULL) << P4D_SHIFT)
 #define P4D_MASK       (~(P4D_SIZE - 1))
 
 /* pud is folded into pgd in case of 3-level page table */
 #define PUD_SHIFT      30
-#define PUD_SIZE       (_AC(1, UL) << PUD_SHIFT)
+#define PUD_SIZE       (_AC(1, ULL) << PUD_SHIFT)
 #define PUD_MASK       (~(PUD_SIZE - 1))
 
 #define PMD_SHIFT       21
 /* Size of region mapped by a page middle directory */
-#define PMD_SIZE        (_AC(1, UL) << PMD_SHIFT)
+#define PMD_SIZE        (_AC(1, ULL) << PMD_SHIFT)
 #define PMD_MASK        (~(PMD_SIZE - 1))
 
 /* Page 4th Directory entry */
 typedef struct {
-	unsigned long p4d;
+	u64 p4d;
 } p4d_t;
 
 #define p4d_val(x)	((x).p4d)
@@ -52,7 +57,7 @@ typedef struct {
 
 /* Page Upper Directory entry */
 typedef struct {
-	unsigned long pud;
+	u64 pud;
 } pud_t;
 
 #define pud_val(x)      ((x).pud)
@@ -61,7 +66,7 @@ typedef struct {
 
 /* Page Middle Directory entry */
 typedef struct {
-	unsigned long pmd;
+	u64 pmd;
 } pmd_t;
 
 #define pmd_val(x)      ((x).pmd)
@@ -118,8 +123,8 @@ enum napot_cont_order {
  *  10 - IO     Non-cacheable, non-idempotent, strongly-ordered I/O memory
  *  11 - Rsvd   Reserved for future standard use
  */
-#define _PAGE_NOCACHE_SVPBMT	(1UL << 61)
-#define _PAGE_IO_SVPBMT		(1UL << 62)
+#define _PAGE_NOCACHE_SVPBMT	(1ULL << 61)
+#define _PAGE_IO_SVPBMT		(1ULL << 62)
 #define _PAGE_MTMASK_SVPBMT	(_PAGE_NOCACHE_SVPBMT | _PAGE_IO_SVPBMT)
 
 /*
@@ -133,10 +138,10 @@ enum napot_cont_order {
  * 01110 - PMA  Weakly-ordered, Cacheable, Bufferable, Shareable, Non-trustable
  * 10010 - IO   Strongly-ordered, Non-cacheable, Non-bufferable, Shareable, Non-trustable
  */
-#define _PAGE_PMA_THEAD		((1UL << 62) | (1UL << 61) | (1UL << 60))
-#define _PAGE_NOCACHE_THEAD	((1UL << 61) | (1UL << 60))
-#define _PAGE_IO_THEAD		((1UL << 63) | (1UL << 60))
-#define _PAGE_MTMASK_THEAD	(_PAGE_PMA_THEAD | _PAGE_IO_THEAD | (1UL << 59))
+#define _PAGE_PMA_THEAD		((1ULL << 62) | (1ULL << 61) | (1ULL << 60))
+#define _PAGE_NOCACHE_THEAD	((1ULL << 61) | (1ULL << 60))
+#define _PAGE_IO_THEAD		((1ULL << 63) | (1ULL << 60))
+#define _PAGE_MTMASK_THEAD	(_PAGE_PMA_THEAD | _PAGE_IO_THEAD | (1ULL << 59))
 
 static inline u64 riscv_page_mtmask(void)
 {
@@ -167,7 +172,7 @@ static inline u64 riscv_page_io(void)
 #define _PAGE_MTMASK		riscv_page_mtmask()
 
 /* Set of bits to preserve across pte_modify() */
-#define _PAGE_CHG_MASK  (~(unsigned long)(_PAGE_PRESENT | _PAGE_READ |	\
+#define _PAGE_CHG_MASK  (~(u64)(_PAGE_PRESENT | _PAGE_READ |	\
 					  _PAGE_WRITE | _PAGE_EXEC |	\
 					  _PAGE_USER | _PAGE_GLOBAL |	\
 					  _PAGE_MTMASK))
@@ -208,12 +213,12 @@ static inline void pud_clear(pud_t *pudp)
 	set_pud(pudp, __pud(0));
 }
 
-static inline pud_t pfn_pud(unsigned long pfn, pgprot_t prot)
+static inline pud_t pfn_pud(u64 pfn, pgprot_t prot)
 {
 	return __pud((pfn << _PAGE_PFN_SHIFT) | pgprot_val(prot));
 }
 
-static inline unsigned long _pud_pfn(pud_t pud)
+static inline u64 _pud_pfn(pud_t pud)
 {
 	return __page_val_to_pfn(pud_val(pud));
 }
@@ -248,16 +253,16 @@ static inline bool mm_pud_folded(struct mm_struct *mm)
 
 #define pmd_index(addr) (((addr) >> PMD_SHIFT) & (PTRS_PER_PMD - 1))
 
-static inline pmd_t pfn_pmd(unsigned long pfn, pgprot_t prot)
+static inline pmd_t pfn_pmd(u64 pfn, pgprot_t prot)
 {
-	unsigned long prot_val = pgprot_val(prot);
+	u64 prot_val = pgprot_val(prot);
 
 	ALT_THEAD_PMA(prot_val);
 
 	return __pmd((pfn << _PAGE_PFN_SHIFT) | prot_val);
 }
 
-static inline unsigned long _pmd_pfn(pmd_t pmd)
+static inline u64 _pmd_pfn(pmd_t pmd)
 {
 	return __page_val_to_pfn(pmd_val(pmd));
 }
@@ -265,13 +270,13 @@ static inline unsigned long _pmd_pfn(pmd_t pmd)
 #define mk_pmd(page, prot)    pfn_pmd(page_to_pfn(page), prot)
 
 #define pmd_ERROR(e) \
-	pr_err("%s:%d: bad pmd %016lx.\n", __FILE__, __LINE__, pmd_val(e))
+	pr_err("%s:%d: bad pmd " PTE_FMT ".\n", __FILE__, __LINE__, pmd_val(e))
 
 #define pud_ERROR(e)   \
-	pr_err("%s:%d: bad pud %016lx.\n", __FILE__, __LINE__, pud_val(e))
+	pr_err("%s:%d: bad pud " PTE_FMT ".\n", __FILE__, __LINE__, pud_val(e))
 
 #define p4d_ERROR(e)   \
-	pr_err("%s:%d: bad p4d %016lx.\n", __FILE__, __LINE__, p4d_val(e))
+	pr_err("%s:%d: bad p4d " PTE_FMT ".\n", __FILE__, __LINE__, p4d_val(e))
 
 static inline void set_p4d(p4d_t *p4dp, p4d_t p4d)
 {
@@ -311,12 +316,12 @@ static inline void p4d_clear(p4d_t *p4d)
 		set_p4d(p4d, __p4d(0));
 }
 
-static inline p4d_t pfn_p4d(unsigned long pfn, pgprot_t prot)
+static inline p4d_t pfn_p4d(u64 pfn, pgprot_t prot)
 {
 	return __p4d((pfn << _PAGE_PFN_SHIFT) | pgprot_val(prot));
 }
 
-static inline unsigned long _p4d_pfn(p4d_t p4d)
+static inline u64 _p4d_pfn(p4d_t p4d)
 {
 	return __page_val_to_pfn(p4d_val(p4d));
 }

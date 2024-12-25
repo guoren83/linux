@@ -18,7 +18,7 @@
 
 #define ADDRESS_SPACE_END	(UL(-1))
 
-#ifdef CONFIG_64BIT
+#if __SIZEOF_POINTER__ == 8
 /* Leave 2GB for kernel and BPF at the end of the address space */
 #define KERNEL_LINK_ADDR	(ADDRESS_SPACE_END - SZ_2G + 1)
 #else
@@ -34,14 +34,18 @@
  * Half of the kernel address space (1/4 of the entries of the page global
  * directory) is for the direct mapping.
  */
+#if (__SIZEOF_POINTER__ == 4) && (CONFIG_PGTABLE_LEVELS > 2)
+#define KERN_VIRT_SIZE          (PTRS_PER_PGD * PMD_SIZE)
+#else
 #define KERN_VIRT_SIZE          ((PTRS_PER_PGD / 2 * PGDIR_SIZE) / 2)
+#endif
 
 #define VMALLOC_SIZE     (KERN_VIRT_SIZE >> 1)
 #define VMALLOC_END      PAGE_OFFSET
 #define VMALLOC_START    (PAGE_OFFSET - VMALLOC_SIZE)
 
 #define BPF_JIT_REGION_SIZE	(SZ_128M)
-#ifdef CONFIG_64BIT
+#if __SIZEOF_POINTER__ == 8
 #define BPF_JIT_REGION_START	(BPF_JIT_REGION_END - BPF_JIT_REGION_SIZE)
 #define BPF_JIT_REGION_END	(MODULES_END)
 #else
@@ -50,7 +54,7 @@
 #endif
 
 /* Modules always live before the kernel */
-#ifdef CONFIG_64BIT
+#if __SIZEOF_POINTER__ == 8
 /* This is used to define the end of the KASAN shadow region */
 #define MODULES_LOWEST_VADDR	(KERNEL_LINK_ADDR - SZ_2G)
 #define MODULES_VADDR		(PFN_ALIGN((unsigned long)&_end) - SZ_2G)
@@ -66,7 +70,7 @@
  * position vmemmap directly below the VMALLOC region.
  */
 #define VA_BITS_SV32 32
-#ifdef CONFIG_64BIT
+#if __SIZEOF_POINTER__ == 8
 #define VA_BITS_SV39 39
 #define VA_BITS_SV48 48
 #define VA_BITS_SV57 57
@@ -94,7 +98,7 @@
 #define PCI_IO_START     (PCI_IO_END - PCI_IO_SIZE)
 
 #define FIXADDR_TOP      PCI_IO_START
-#ifdef CONFIG_64BIT
+#if CONFIG_PGTABLE_LEVELS > 2
 #define MAX_FDT_SIZE	 PMD_SIZE
 #define FIX_FDT_SIZE	 (MAX_FDT_SIZE + SZ_2M)
 #define FIXADDR_SIZE     (PMD_SIZE + FIX_FDT_SIZE)
@@ -117,7 +121,7 @@
 
 #define __page_val_to_pfn(_val)  (((_val) & _PAGE_PFN_MASK) >> _PAGE_PFN_SHIFT)
 
-#ifdef CONFIG_64BIT
+#if CONFIG_PGTABLE_LEVELS > 2
 #include <asm/pgtable-64.h>
 
 #define VA_USER_SV39 (UL(1) << (VA_BITS_SV39 - 1))
@@ -135,7 +139,7 @@
 #endif
 #else
 #include <asm/pgtable-32.h>
-#endif /* CONFIG_64BIT */
+#endif
 
 #include <linux/page_table_check.h>
 
@@ -257,7 +261,7 @@ static inline void pmd_clear(pmd_t *pmdp)
 
 static inline pgd_t pfn_pgd(unsigned long pfn, pgprot_t prot)
 {
-	unsigned long prot_val = pgprot_val(prot);
+	ptval_t prot_val = pgprot_val(prot);
 
 	ALT_THEAD_PMA(prot_val);
 
@@ -596,7 +600,11 @@ extern int ptep_test_and_clear_young(struct vm_area_struct *vma, unsigned long a
 static inline pte_t ptep_get_and_clear(struct mm_struct *mm,
 				       unsigned long address, pte_t *ptep)
 {
+#if CONFIG_PGTABLE_LEVELS > 2
+	pte_t pte = __pte(atomic_long_xchg((atomic64_t *)ptep, 0));
+#else
 	pte_t pte = __pte(atomic_long_xchg((atomic_long_t *)ptep, 0));
+#endif
 
 	page_table_check_pte_clear(mm, pte);
 
@@ -607,7 +615,11 @@ static inline pte_t ptep_get_and_clear(struct mm_struct *mm,
 static inline void ptep_set_wrprotect(struct mm_struct *mm,
 				      unsigned long address, pte_t *ptep)
 {
+#if CONFIG_PGTABLE_LEVELS > 2
+	atomic64_and(~(u64)_PAGE_WRITE, (atomic64_t *)ptep);
+#else
 	atomic_long_and(~(unsigned long)_PAGE_WRITE, (atomic_long_t *)ptep);
+#endif
 }
 
 #define __HAVE_ARCH_PTEP_CLEAR_YOUNG_FLUSH
@@ -641,7 +653,7 @@ static inline pgprot_t pgprot_nx(pgprot_t _prot)
 #define pgprot_noncached pgprot_noncached
 static inline pgprot_t pgprot_noncached(pgprot_t _prot)
 {
-	unsigned long prot = pgprot_val(_prot);
+	ptval_t prot = pgprot_val(_prot);
 
 	prot &= ~_PAGE_MTMASK;
 	prot |= _PAGE_IO;
@@ -652,7 +664,7 @@ static inline pgprot_t pgprot_noncached(pgprot_t _prot)
 #define pgprot_writecombine pgprot_writecombine
 static inline pgprot_t pgprot_writecombine(pgprot_t _prot)
 {
-	unsigned long prot = pgprot_val(_prot);
+	ptval_t prot = pgprot_val(_prot);
 
 	prot &= ~_PAGE_MTMASK;
 	prot |= _PAGE_NOCACHE;
@@ -909,7 +921,7 @@ static inline pte_t pte_swp_clear_exclusive(pte_t pte)
  * In the RV64 Linux scheme, we give the user half of the virtual-address space
  * and give the kernel the other (upper) half.
  */
-#ifdef CONFIG_64BIT
+#if __SIZEOF_POINTER__ == 8
 #define KERN_VIRT_START	(-(BIT(VA_BITS)) + TASK_SIZE)
 #else
 #define KERN_VIRT_START	FIXADDR_START
@@ -931,7 +943,7 @@ static inline pte_t pte_swp_clear_exclusive(pte_t pte)
  * 63–48 all equal to bit 47, or else a page-fault exception will occur."
  * Similarly for SV57, bits 63–57 must be equal to bit 56.
  */
-#ifdef CONFIG_64BIT
+#if __riscv_xlen == 64
 #define TASK_SIZE_64	(PGDIR_SIZE * PTRS_PER_PGD / 2)
 #define TASK_SIZE_MAX	LONG_MAX
 
