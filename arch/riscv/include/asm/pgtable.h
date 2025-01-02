@@ -60,6 +60,7 @@
 #define MODULES_VADDR		(PFN_ALIGN((unsigned long)&_end) - SZ_2G)
 #define MODULES_END		(PFN_ALIGN((unsigned long)&_start))
 #else
+#define MODULES_LOWEST_VADDR	VMALLOC_START
 #define MODULES_VADDR		VMALLOC_START
 #define MODULES_END		VMALLOC_END
 #endif
@@ -601,7 +602,7 @@ static inline pte_t ptep_get_and_clear(struct mm_struct *mm,
 				       unsigned long address, pte_t *ptep)
 {
 #if CONFIG_PGTABLE_LEVELS > 2
-	pte_t pte = __pte(atomic_long_xchg((atomic64_t *)ptep, 0));
+	pte_t pte = __pte(atomic64_xchg((atomic64_t *)ptep, 0));
 #else
 	pte_t pte = __pte(atomic_long_xchg((atomic_long_t *)ptep, 0));
 #endif

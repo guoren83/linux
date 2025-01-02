@@ -436,12 +436,12 @@ static __always_inline unsigned long get_extent(enum pgt_entry entry,
 	switch (entry) {
 	case HPAGE_PMD:
 	case NORMAL_PMD:
-		mask = PMD_MASK;
+		mask = (ulong)PMD_MASK;
 		size = PMD_SIZE;
 		break;
 	case HPAGE_PUD:
 	case NORMAL_PUD:
-		mask = PUD_MASK;
+		mask = (ulong)PUD_MASK;
 		size = PUD_SIZE;
 		break;
 	default:
@@ -581,7 +581,7 @@ unsigned long move_page_tables(struct vm_area_struct *vma,
 	 * Only realign if the mremap copying hits a PMD boundary.
 	 */
 	if (len >= PMD_SIZE - (old_addr & ~PMD_MASK))
-		try_realign_addr(&old_addr, vma, &new_addr, new_vma, PMD_MASK,
+		try_realign_addr(&old_addr, vma, &new_addr, new_vma, (ulong)PMD_MASK,
 				 for_stack);
 
 	flush_cache_range(vma, old_addr, old_end);

@@ -69,7 +69,7 @@ static void tick_do_update_jiffies64(ktime_t now)
 	 * moved by the CPU to a random point in the future.
 	 */
 	if (IS_ENABLED(CONFIG_64BIT)) {
-		if (ktime_before(now, smp_load_acquire(&tick_next_period)))
+//		if (ktime_before(now, smp_load_acquire(&tick_next_period)))
 			return;
 	} else {
 		unsigned int seq;

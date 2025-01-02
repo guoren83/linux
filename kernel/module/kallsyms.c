@@ -184,11 +184,11 @@ void add_kallsyms(struct module *mod, const struct load_info *info)
 
 	rcu_read_lock();
 	/* The following is safe since this pointer cannot change */
-	rcu_dereference(mod->kallsyms)->symtab = (void *)symsec->sh_addr;
+	rcu_dereference(mod->kallsyms)->symtab = (void *)(ulong)symsec->sh_addr;
 	rcu_dereference(mod->kallsyms)->num_symtab = symsec->sh_size / sizeof(Elf_Sym);
 	/* Make sure we get permanent strtab: don't use info->strtab. */
 	rcu_dereference(mod->kallsyms)->strtab =
-		(void *)info->sechdrs[info->index.str].sh_addr;
+		(void *)(ulong)info->sechdrs[info->index.str].sh_addr;
 	rcu_dereference(mod->kallsyms)->typetab = init_data_base + info->init_typeoffs;
 
 	/*

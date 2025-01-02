@@ -99,7 +99,7 @@ void module_bug_finalize(const Elf_Ehdr *hdr, const Elf_Shdr *sechdrs,
 	for (i = 1; i < hdr->e_shnum; i++) {
 		if (strcmp(secstrings+sechdrs[i].sh_name, "__bug_table"))
 			continue;
-		mod->bug_table = (void *) sechdrs[i].sh_addr;
+		mod->bug_table = (void *)(ulong) sechdrs[i].sh_addr;
 		mod->num_bugs = sechdrs[i].sh_size / sizeof(struct bug_entry);
 		break;
 	}
