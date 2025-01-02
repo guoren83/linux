@@ -59,7 +59,7 @@ void clear_page(void *page);
 #if CONFIG_PGTABLE_LEVELS > 2
 typedef	u64 ptval_t;
 #else
-typedef	u32 ptval_t;
+typedef	ulong ptval_t;
 #endif
 
 /* Page Global Directory entry */

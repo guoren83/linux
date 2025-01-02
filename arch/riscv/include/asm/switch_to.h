@@ -71,9 +71,9 @@ static __always_inline bool has_fpu(void) { return false; }
 #endif
 
 static inline void envcfg_update_bits(struct task_struct *task,
-				      unsigned long mask, unsigned long val)
+				      xlen_t mask, xlen_t val)
 {
-	unsigned long envcfg;
+	xlen_t envcfg;
 
 	envcfg = (task->thread.envcfg & ~mask) | val;
 	task->thread.envcfg = envcfg;

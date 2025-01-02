@@ -33,12 +33,14 @@ ifeq ($(CONFIG_ARCH_RV64I),y)
 ifeq ($(CONFIG_ABI_RV64ILP32),y)
 	KBUILD_CFLAGS += -mabi=ilp32
 	KBUILD_AFLAGS += -mabi=ilp32
+
+	KBUILD_LDFLAGS += -melf32lriscv
 else
 	KBUILD_CFLAGS += -mabi=lp64
 	KBUILD_AFLAGS += -mabi=lp64
-endif
 
 	KBUILD_LDFLAGS += -melf64lriscv
+endif
 
 	KBUILD_RUSTFLAGS += -Ctarget-cpu=generic-rv64 --target=riscv64imac-unknown-none-elf \
 			    -Cno-redzone

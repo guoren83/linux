@@ -80,9 +80,15 @@ enum {
 #define AUTOFS_IOC_SETTIMEOUT32 _IOWR(AUTOFS_IOCTL, \
 				      AUTOFS_IOC_SETTIMEOUT_CMD, \
 				      compat_ulong_t)
+#ifdef CONFIG_64BIT
+#define AUTOFS_IOC_SETTIMEOUT   _IOWR(AUTOFS_IOCTL, \
+				      AUTOFS_IOC_SETTIMEOUT_CMD, \
+				      unsigned long long)
+#else
 #define AUTOFS_IOC_SETTIMEOUT   _IOWR(AUTOFS_IOCTL, \
 				      AUTOFS_IOC_SETTIMEOUT_CMD, \
 				      unsigned long)
+#endif
 #define AUTOFS_IOC_EXPIRE       _IOR(AUTOFS_IOCTL, \
 				     AUTOFS_IOC_EXPIRE_CMD, \
 				     struct autofs_packet_expire)

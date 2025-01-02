@@ -45,7 +45,7 @@
  * This decides where the kernel will search for a free chunk of vm
  * space during mmap's.
  */
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 #define TASK_UNMAPPED_BASE	PAGE_ALIGN((UL(1) << MMAP_MIN_VA_BITS) / 3)
 #else
 #define TASK_UNMAPPED_BASE	PAGE_ALIGN(TASK_SIZE / 3)
@@ -102,7 +102,7 @@ struct thread_struct {
 	xlen_t     s[12];	/* s[0]: frame pointer */
 	struct __riscv_d_ext_state fstate;
 	unsigned long bad_cause;
-	unsigned long envcfg;
+	xlen_t envcfg;
 	u32 riscv_v_flags;
 	u32 vstate_ctrl;
 	struct __riscv_v_ext_state vstate;
