@@ -113,7 +113,7 @@ static inline void print_mlg(char *name, unsigned long b, unsigned long t)
 		   (((t) - (b)) >> LOG2_SZ_1G));
 }
 
-#ifdef CONFIG_64BIT
+#if __SIZEOF_POINTER__ == 8
 static inline void print_mlt(char *name, unsigned long b, unsigned long t)
 {
 	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld TB)\n", name, b, t,
@@ -127,7 +127,7 @@ static inline void print_ml(char *name, unsigned long b, unsigned long t)
 {
 	unsigned long diff = t - b;
 
-	if (IS_ENABLED(CONFIG_64BIT) && (diff >> LOG2_SZ_1T) >= 10)
+	if ((__SIZEOF_POINTER__ == 8) && (diff >> LOG2_SZ_1T) >= 10)
 		print_mlt(name, b, t);
 	else if ((diff >> LOG2_SZ_1G) >= 10)
 		print_mlg(name, b, t);
@@ -776,6 +776,7 @@ static __meminit pgprot_t pgprot_from_va(uintptr_t va)
 #if defined(CONFIG_64BIT) && !defined(CONFIG_XIP_KERNEL)
 u64 __pi_set_satp_mode_from_cmdline(uintptr_t dtb_pa);
 
+#if 0
 static void __init disable_pgtable_l5(void)
 {
 	pgtable_l5_enabled = false;
@@ -803,6 +804,7 @@ static int __init print_no5lvl(char *p)
 	return 0;
 }
 early_param("no5lvl", print_no5lvl);
+#endif
 
 static void __init set_mmap_rnd_bits_max(void)
 {
@@ -819,6 +821,7 @@ static __init void set_satp_mode(uintptr_t dtb_pa)
 {
 	u64 identity_satp, hw_satp;
 	uintptr_t set_satp_mode_pmd = ((unsigned long)set_satp_mode) & PMD_MASK;
+#if 0
 	u64 satp_mode_cmdline = __pi_set_satp_mode_from_cmdline(dtb_pa);
 
 	if (satp_mode_cmdline == SATP_MODE_57) {
@@ -828,7 +831,7 @@ static __init void set_satp_mode(uintptr_t dtb_pa)
 		disable_pgtable_l4();
 		return;
 	}
-
+#endif
 	create_p4d_mapping(early_p4d,
 			set_satp_mode_pmd, (uintptr_t)early_pud,
 			P4D_SIZE, PAGE_TABLE);
@@ -843,7 +846,9 @@ static __init void set_satp_mode(uintptr_t dtb_pa)
 			   set_satp_mode_pmd + PMD_SIZE,
 			   set_satp_mode_pmd + PMD_SIZE,
 			   PMD_SIZE, PAGE_KERNEL_EXEC);
+#if 0
 retry:
+#endif
 	create_pgd_mapping(early_pg_dir,
 			   set_satp_mode_pmd,
 			   pgtable_l5_enabled ?
@@ -857,6 +862,7 @@ retry:
 	hw_satp = csr_swap(CSR_SATP, 0ULL);
 	local_flush_tlb_all();
 
+#if 0
 	if (hw_satp != identity_satp) {
 		if (pgtable_l5_enabled) {
 			disable_pgtable_l5();
@@ -865,7 +871,7 @@ retry:
 		}
 		disable_pgtable_l4();
 	}
-
+#endif
 	memset(early_pg_dir, 0, PAGE_SIZE);
 	memset(early_p4d, 0, PAGE_SIZE);
 	memset(early_pud, 0, PAGE_SIZE);
@@ -1516,12 +1522,14 @@ void __init pgtable_cache_init(void)
 	preallocate_pgd_pages_range(VMALLOC_START, VMALLOC_END, "vmalloc");
 	if (IS_ENABLED(CONFIG_MODULES))
 		preallocate_pgd_pages_range(MODULES_VADDR, MODULES_END, "bpf/modules");
+#ifdef CONFIG_MEMORY_HOTPLUG
 	if (IS_ENABLED(CONFIG_MEMORY_HOTPLUG)) {
 		preallocate_pgd_pages_range(VMEMMAP_START, VMEMMAP_END, "vmemmap");
 		preallocate_pgd_pages_range(PAGE_OFFSET, PAGE_END, "direct map");
 		if (IS_ENABLED(CONFIG_KASAN))
 			preallocate_pgd_pages_range(KASAN_SHADOW_START, KASAN_SHADOW_END, "kasan");
 	}
+#endif
 }
 #endif
 

@@ -45,8 +45,11 @@ struct list_lru;
  * space (-4094 to -2).  They're never stored in the slots array; only
  * returned by the normal API.
  */
-
-#define BITS_PER_XA_VALUE	(BITS_PER_LONG - 1)
+#if __SIZEOF_POINTER__ == 8
+#define BITS_PER_XA_VALUE	(64 - 1)
+#else
+#define BITS_PER_XA_VALUE	(32 - 1)
+#endif
 
 /**
  * xa_mk_value() - Create an XArray entry from an integer.

@@ -79,7 +79,7 @@ typedef struct {
  * | 63 | 62 61 | 60 54 | 53  10 | 9             8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0
  *   N      MT     RSV    PFN      reserved for SW   D   A   G   U   X   W   R   V
  */
-#define _PAGE_PFN_MASK  GENMASK(53, 10)
+#define _PAGE_PFN_MASK  GENMASK_ULL(53, 10)
 
 /*
  * [63] Svnapot definitions:
@@ -87,7 +87,7 @@ typedef struct {
  * 1 Svnapot enabled
  */
 #define _PAGE_NAPOT_SHIFT	63
-#define _PAGE_NAPOT		BIT(_PAGE_NAPOT_SHIFT)
+#define _PAGE_NAPOT		BIT_ULL(_PAGE_NAPOT_SHIFT)
 /*
  * Only 64KB (order 4) napot ptes supported.
  */
@@ -105,9 +105,9 @@ enum napot_cont_order {
 #define napot_cont_order(val)	(__builtin_ctzl((val.pte >> _PAGE_PFN_SHIFT) << 1))
 
 #define napot_cont_shift(order)	((order) + PAGE_SHIFT)
-#define napot_cont_size(order)	BIT(napot_cont_shift(order))
+#define napot_cont_size(order)	BIT_ULL(napot_cont_shift(order))
 #define napot_cont_mask(order)	(~(napot_cont_size(order) - 1UL))
-#define napot_pte_num(order)	BIT(order)
+#define napot_pte_num(order)	BIT_ULL(order)
 
 #ifdef CONFIG_RISCV_ISA_SVNAPOT
 #define HUGE_MAX_HSTATE		(2 + (NAPOT_ORDER_MAX - NAPOT_CONT_ORDER_BASE))

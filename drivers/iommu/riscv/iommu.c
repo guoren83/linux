@@ -1273,7 +1273,7 @@ static phys_addr_t riscv_iommu_iova_to_phys(struct iommu_domain *iommu_domain,
 	unsigned long pte_size;
 	unsigned long *ptr;
 
-	ptr = riscv_iommu_pte_fetch(domain, iova, &pte_size);
+	ptr = riscv_iommu_pte_fetch(domain, iova, (size_t *)&pte_size);
 	if (_io_pte_none(*ptr) || !_io_pte_present(*ptr))
 		return 0;
 

@@ -1015,7 +1015,7 @@ EXPORT_SYMBOL_GPL(unregister_random_vmfork_notifier);
 #endif
 
 struct fast_pool {
-	unsigned long pool[4];
+	u64 pool[4];
 	unsigned long last;
 	unsigned int count;
 	struct timer_list mix;
@@ -1040,7 +1040,7 @@ static DEFINE_PER_CPU(struct fast_pool, irq_randomness) = {
  * and therefore this has no security on its own. s represents the
  * four-word SipHash state, while v represents a two-word input.
  */
-static void fast_mix(unsigned long s[4], unsigned long v1, unsigned long v2)
+static void fast_mix(u64 s[4], u64 v1, u64 v2)
 {
 	s[3] ^= v1;
 	FASTMIX_PERM(s[0], s[1], s[2], s[3]);

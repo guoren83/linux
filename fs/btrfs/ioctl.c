@@ -4537,7 +4537,7 @@ static int btrfs_ioctl_encoded_read(struct file *file, void __user *argp,
 			ret = -EFAULT;
 			goto out_acct;
 		}
-		args.iov = compat_ptr(args32.iov);
+		args.iov = (u64)(ulong)compat_ptr(args32.iov);
 		args.iovcnt = args32.iovcnt;
 		args.offset = args32.offset;
 		args.flags = args32.flags;
@@ -4556,7 +4556,7 @@ static int btrfs_ioctl_encoded_read(struct file *file, void __user *argp,
 		goto out_acct;
 	}
 
-	ret = import_iovec(ITER_DEST, args.iov, args.iovcnt, ARRAY_SIZE(iovstack),
+	ret = import_iovec(ITER_DEST, (void *)(ulong)args.iov, args.iovcnt, ARRAY_SIZE(iovstack),
 			   &iov, &iter);
 	if (ret < 0)
 		goto out_acct;
@@ -4644,7 +4644,7 @@ static int btrfs_ioctl_encoded_write(struct file *file, void __user *argp, bool 
 			ret = -EFAULT;
 			goto out_acct;
 		}
-		args.iov = compat_ptr(args32.iov);
+		args.iov = (u64)(ulong)compat_ptr(args32.iov);
 		args.iovcnt = args32.iovcnt;
 		args.offset = args32.offset;
 		args.flags = args32.flags;
@@ -4680,7 +4680,7 @@ static int btrfs_ioctl_encoded_write(struct file *file, void __user *argp, bool 
 	if (args.len > args.unencoded_len - args.unencoded_offset)
 		goto out_acct;
 
-	ret = import_iovec(ITER_SOURCE, args.iov, args.iovcnt, ARRAY_SIZE(iovstack),
+	ret = import_iovec(ITER_SOURCE, (void *)(ulong)args.iov, args.iovcnt, ARRAY_SIZE(iovstack),
 			   &iov, &iter);
 	if (ret < 0)
 		goto out_acct;
@@ -4917,7 +4917,7 @@ static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd, unsigned int issue
 			ret = -EFAULT;
 			goto out_acct;
 		}
-		args.iov = compat_ptr(args32.iov);
+		args.iov = (u64)(ulong)compat_ptr(args32.iov);
 		args.iovcnt = args32.iovcnt;
 		args.offset = args32.offset;
 		args.flags = args32.flags;
@@ -4935,7 +4935,7 @@ static int btrfs_uring_encoded_read(struct io_uring_cmd *cmd, unsigned int issue
 	if (args.flags != 0)
 		return -EINVAL;
 
-	ret = import_iovec(ITER_DEST, args.iov, args.iovcnt, ARRAY_SIZE(iovstack),
+	ret = import_iovec(ITER_DEST, (void *)(ulong)args.iov, args.iovcnt, ARRAY_SIZE(iovstack),
 			   &iov, &iter);
 	if (ret < 0)
 		goto out_acct;

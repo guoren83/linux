@@ -272,7 +272,7 @@ long set_tagged_addr_ctrl(struct task_struct *task, unsigned long arg)
 	unsigned long valid_mask = PR_PMLEN_MASK | PR_TAGGED_ADDR_ENABLE;
 	struct thread_info *ti = task_thread_info(task);
 	struct mm_struct *mm = task->mm;
-	unsigned long pmm;
+	xlen_t pmm;
 	u8 pmlen;
 
 	if (is_compat_thread(ti))
@@ -352,7 +352,7 @@ long get_tagged_addr_ctrl(struct task_struct *task)
 	return ret;
 }
 
-static bool try_to_set_pmm(unsigned long value)
+static bool try_to_set_pmm(xlen_t value)
 {
 	csr_set(CSR_ENVCFG, value);
 	return (csr_read_clear(CSR_ENVCFG, ENVCFG_PMM) & ENVCFG_PMM) == value;

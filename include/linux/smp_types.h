@@ -62,7 +62,11 @@ struct __call_single_node {
 		atomic_t	a_flags;
 	};
 #ifdef CONFIG_64BIT
+#if (__SIZEOF_POINTER__ == 8)
 	u16 src, dst;
+#else
+	u64 src, dst;
+#endif
 #endif
 };
 

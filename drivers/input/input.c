@@ -1045,7 +1045,11 @@ static int input_bits_to_string(char *buf, int buf_size,
 	int len = 0;
 
 	if (in_compat_syscall()) {
+#if __SIZEOF_LONG__ == 8
 		u32 dword = bits >> 32;
+#else
+		u32 dword = bits;
+#endif
 		if (dword || !skip_empty)
 			len += snprintf(buf, buf_size, "%x ", dword);
 

@@ -199,9 +199,11 @@ switch_mm_fast:
 
 static void set_mm_noasid(struct mm_struct *mm)
 {
+	register long asid = 0;
 	/* Switch the page table and blindly nuke entire local TLB */
 	csr_write(CSR_SATP, virt_to_pfn(mm->pgd) | satp_mode);
 	local_flush_tlb_all_asid(0);
+	__asm__ __volatile__ ("sfence.vma sp, x0\t\n ld x0,(sp)\t\n sfence.vma zero, %0\t\n" : : "r" (asid) : "memory");
 }
 
 static inline void set_mm(struct mm_struct *prev,

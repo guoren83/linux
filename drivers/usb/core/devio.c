@@ -1673,7 +1673,7 @@ static int proc_do_submiturb(struct usb_dev_state *ps, struct usbdevfs_urb *uurb
 		dr = kmalloc(sizeof(struct usb_ctrlrequest), GFP_KERNEL);
 		if (!dr)
 			return -ENOMEM;
-		if (copy_from_user(dr, uurb->buffer, 8)) {
+		if (copy_from_user(dr, (void *)(ulong)uurb->buffer, 8)) {
 			ret = -EFAULT;
 			goto error;
 		}
@@ -1773,7 +1773,7 @@ static int proc_do_submiturb(struct usb_dev_state *ps, struct usbdevfs_urb *uurb
 	}
 
 	if (uurb->buffer_length > 0 &&
-			!access_ok(uurb->buffer, uurb->buffer_length)) {
+			!access_ok((void *)(ulong)uurb->buffer, uurb->buffer_length)) {
 		ret = -EFAULT;
 		goto error;
 	}
@@ -1826,7 +1826,7 @@ static int proc_do_submiturb(struct usb_dev_state *ps, struct usbdevfs_urb *uurb
 			sg_set_buf(&as->urb->sg[i], buf, u);
 
 			if (!is_in) {
-				if (copy_from_user(buf, uurb->buffer, u)) {
+				if (copy_from_user(buf, (void *)(ulong)uurb->buffer, u)) {
 					ret = -EFAULT;
 					goto error;
 				}
@@ -1849,7 +1849,7 @@ static int proc_do_submiturb(struct usb_dev_state *ps, struct usbdevfs_urb *uurb
 			}
 			if (!is_in) {
 				if (copy_from_user(as->urb->transfer_buffer,
-						   uurb->buffer,
+						   (void *)(ulong)uurb->buffer,
 						   uurb->buffer_length)) {
 					ret = -EFAULT;
 					goto error;
@@ -1927,7 +1927,7 @@ static int proc_do_submiturb(struct usb_dev_state *ps, struct usbdevfs_urb *uurb
 		as->urb->transfer_dma = as->usbm->dma_handle +
 				(uurb_start - as->usbm->vm_start);
 	} else if (is_in && uurb->buffer_length > 0)
-		as->userbuffer = uurb->buffer;
+		as->userbuffer = (void *)(ulong)uurb->buffer;
 	as->signr = uurb->signr;
 	as->ifnum = ifnum;
 	as->pid = get_pid(task_pid(current));
@@ -2184,14 +2184,14 @@ static int get_urb32(struct usbdevfs_urb *kurb,
 	kurb->endpoint = urb32.endpoint;
 	kurb->status = urb32.status;
 	kurb->flags = urb32.flags;
-	kurb->buffer = compat_ptr(urb32.buffer);
+	kurb->buffer = (u64)(ulong)compat_ptr(urb32.buffer);
 	kurb->buffer_length = urb32.buffer_length;
 	kurb->actual_length = urb32.actual_length;
 	kurb->start_frame = urb32.start_frame;
 	kurb->number_of_packets = urb32.number_of_packets;
 	kurb->error_count = urb32.error_count;
 	kurb->signr = urb32.signr;
-	kurb->usercontext = compat_ptr(urb32.usercontext);
+	kurb->usercontext = (u64)(ulong)compat_ptr(urb32.usercontext);
 	return 0;
 }
 
@@ -2289,7 +2289,7 @@ static int proc_disconnectsignal(struct usb_dev_state *ps, void __user *arg)
 	if (copy_from_user(&ds, arg, sizeof(ds)))
 		return -EFAULT;
 	ps->discsignr = ds.signr;
-	ps->disccontext.sival_ptr = ds.context;
+	ps->disccontext.sival_ptr = (void *)(ulong)ds.context;
 	return 0;
 }
 
@@ -2337,7 +2337,7 @@ static int proc_ioctl(struct usb_dev_state *ps, struct usbdevfs_ioctl *ctl)
 		if (buf == NULL)
 			return -ENOMEM;
 		if ((_IOC_DIR(ctl->ioctl_code) & _IOC_WRITE)) {
-			if (copy_from_user(buf, ctl->data, size)) {
+			if (copy_from_user(buf, (void *)(ulong)ctl->data, size)) {
 				kfree(buf);
 				return -EFAULT;
 			}
@@ -2387,7 +2387,7 @@ static int proc_ioctl(struct usb_dev_state *ps, struct usbdevfs_ioctl *ctl)
 	if (retval >= 0
 			&& (_IOC_DIR(ctl->ioctl_code) & _IOC_READ) != 0
 			&& size > 0
-			&& copy_to_user(ctl->data, buf, size) != 0)
+			&& copy_to_user((void *)(ulong)ctl->data, buf, size) != 0)
 		retval = -EFAULT;
 
 	kfree(buf);
@@ -2413,7 +2413,7 @@ static int proc_ioctl_compat(struct usb_dev_state *ps, compat_uptr_t arg)
 		return -EFAULT;
 	ctrl.ifno = ioc32.ifno;
 	ctrl.ioctl_code = ioc32.ioctl_code;
-	ctrl.data = compat_ptr(ioc32.data);
+	ctrl.data = (ulong)compat_ptr(ioc32.data);
 	return proc_ioctl(ps, &ctrl);
 }
 #endif

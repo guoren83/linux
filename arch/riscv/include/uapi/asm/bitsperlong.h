@@ -9,6 +9,12 @@
 
 #define __BITS_PER_LONG (__SIZEOF_POINTER__ * 8)
 
+#if (__BITS_PER_LONG == 32)
+#define BITS_PER_LONG 32
+#else
+#define BITS_PER_LONG 64
+#endif
+
 #include <asm-generic/bitsperlong.h>
 
 #endif /* _UAPI_ASM_RISCV_BITSPERLONG_H */

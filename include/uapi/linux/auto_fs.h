@@ -82,7 +82,7 @@ enum {
 				      compat_ulong_t)
 #define AUTOFS_IOC_SETTIMEOUT   _IOWR(AUTOFS_IOCTL, \
 				      AUTOFS_IOC_SETTIMEOUT_CMD, \
-				      unsigned long)
+				      unsigned long long)
 #define AUTOFS_IOC_EXPIRE       _IOR(AUTOFS_IOCTL, \
 				     AUTOFS_IOC_EXPIRE_CMD, \
 				     struct autofs_packet_expire)

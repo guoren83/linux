@@ -45,6 +45,7 @@ struct usbdevfs_ctrltransfer {
 	__u16 wLength;
 	__u32 timeout;  /* in milliseconds */
  	void __user *data;
+ 	void __user *data2;
 };
 
 struct usbdevfs_bulktransfer {
@@ -52,6 +53,7 @@ struct usbdevfs_bulktransfer {
 	unsigned int len;
 	unsigned int timeout; /* in milliseconds */
 	void __user *data;
+ 	void __user *data2;
 };
 
 struct usbdevfs_setinterface {
@@ -61,7 +63,8 @@ struct usbdevfs_setinterface {
 
 struct usbdevfs_disconnectsignal {
 	unsigned int signr;
-	void __user *context;
+	u64 context;
+ 	u64 data2;
 };
 
 #define USBDEVFS_MAXDRIVERNAME 255
@@ -119,7 +122,7 @@ struct usbdevfs_urb {
 	unsigned char endpoint;
 	int status;
 	unsigned int flags;
-	void __user *buffer;
+	u64 buffer;
 	int buffer_length;
 	int actual_length;
 	int start_frame;
@@ -130,7 +133,7 @@ struct usbdevfs_urb {
 	int error_count;
 	unsigned int signr;	/* signal to be sent on completion,
 				  or 0 if none should be sent. */
-	void __user *usercontext;
+	u64 usercontext;
 	struct usbdevfs_iso_packet_desc iso_frame_desc[];
 };
 
@@ -139,7 +142,7 @@ struct usbdevfs_ioctl {
 	int	ifno;		/* interface 0..N ; negative numbers reserved */
 	int	ioctl_code;	/* MUST encode size + direction of data so the
 				 * macros in <asm/ioctl.h> give correct values */
-	void __user *data;	/* param buffer (in, or out) */
+	u64 data;	/* param buffer (in, or out) */
 };
 
 /* You can do most things with hubs just through control messages,
@@ -195,9 +198,9 @@ struct usbdevfs_streams {
 #define USBDEVFS_SUBMITURB         _IOR('U', 10, struct usbdevfs_urb)
 #define USBDEVFS_SUBMITURB32       _IOR('U', 10, struct usbdevfs_urb32)
 #define USBDEVFS_DISCARDURB        _IO('U', 11)
-#define USBDEVFS_REAPURB           _IOW('U', 12, void *)
+#define USBDEVFS_REAPURB           _IOW('U', 12, __u64)
 #define USBDEVFS_REAPURB32         _IOW('U', 12, __u32)
-#define USBDEVFS_REAPURBNDELAY     _IOW('U', 13, void *)
+#define USBDEVFS_REAPURBNDELAY     _IOW('U', 13, __u64)
 #define USBDEVFS_REAPURBNDELAY32   _IOW('U', 13, __u32)
 #define USBDEVFS_DISCSIGNAL        _IOR('U', 14, struct usbdevfs_disconnectsignal)
 #define USBDEVFS_DISCSIGNAL32      _IOR('U', 14, struct usbdevfs_disconnectsignal32)
