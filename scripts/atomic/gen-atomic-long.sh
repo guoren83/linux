@@ -55,7 +55,7 @@ cat <<EOF
 static __always_inline ${ret}
 raw_atomic_long_${atomicname}(${params})
 {
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	${retstmt}raw_atomic64_${atomicname}(${argscast_64});
 #else
 	${retstmt}raw_atomic_${atomicname}(${argscast_32});
@@ -77,7 +77,7 @@ cat << EOF
 #include <linux/compiler.h>
 #include <asm/types.h>
 
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 typedef atomic64_t atomic_long_t;
 #define ATOMIC_LONG_INIT(i)		ATOMIC64_INIT(i)
 #define atomic_long_cond_read_acquire	atomic64_cond_read_acquire
