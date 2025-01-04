@@ -76,7 +76,7 @@ cat << EOF
 #endif
 
 /* System calls for 32-bit kernels only */
-#if BITS_PER_LONG == 64
+#ifdef CONFIG_64BIT
 #define __IGNORE_sendfile64
 #define __IGNORE_ftruncate64
 #define __IGNORE_truncate64
