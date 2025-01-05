@@ -26,10 +26,29 @@ struct semid_ds {
 	struct ipc_perm	sem_perm;		/* permissions .. see ipc.h */
 	__kernel_old_time_t sem_otime;		/* last semop time */
 	__kernel_old_time_t sem_ctime;		/* create/last semctl() time */
+#if __riscv_xlen == 64
+	union {
+		struct sem	*sem_base;		/* ptr to first semaphore in array */
+		u64 __sem_base;
+	};
+	union {
+		struct sem_queue *sem_pending;		/* pending operations to be processed */
+		u64 __sem_pending;
+	};
+	union {
+		struct sem_queue **sem_pending_last;	/* last pending operation */
+		u64 __sem_pending_last;
+	};
+	union {
+		struct sem_undo	*undo;			/* undo requests on this array */
+		u64 __undo;
+	};
+#else
 	struct sem	*sem_base;		/* ptr to first semaphore in array */
 	struct sem_queue *sem_pending;		/* pending operations to be processed */
 	struct sem_queue **sem_pending_last;	/* last pending operation */
 	struct sem_undo	*undo;			/* undo requests on this array */
+#endif
 	unsigned short	sem_nsems;		/* no. of semaphores in array */
 };
 
@@ -46,10 +65,29 @@ struct sembuf {
 /* arg for semctl system calls. */
 union semun {
 	int val;			/* value for SETVAL */
+#if __riscv_xlen == 64
+	union {
+		struct semid_ds __user *buf;	/* buffer for IPC_STAT & IPC_SET */
+		u64 ___buf;
+	};
+	union {
+		unsigned short __user *array;	/* array for GETALL & SETALL */
+		u64 __array;
+	};
+	union {
+		struct seminfo __user *__buf;	/* buffer for IPC_INFO */
+		u64 ____buf;
+	};
+	union {
+		void __user *__pad;
+		u64 ____pad;
+	};
+#else
 	struct semid_ds __user *buf;	/* buffer for IPC_STAT & IPC_SET */
 	unsigned short __user *array;	/* array for GETALL & SETALL */
 	struct seminfo __user *__buf;	/* buffer for IPC_INFO */
 	void __user *__pad;
+#endif
 };
 
 struct  seminfo {
