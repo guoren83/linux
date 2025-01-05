@@ -959,7 +959,14 @@ struct btrfs_ioctl_encoded_io_args {
 	 * increase in the future). This must also be less than or equal to
 	 * unencoded_len.
 	 */
+#if __riscv_xlen == 64
+	union {
+		const struct iovec __user *iov;
+		const __u64 __iov;
+	};
+#else
 	const struct iovec __user *iov;
+#endif
 	/* Number of iovecs. */
 	unsigned long iovcnt;
 	/*
