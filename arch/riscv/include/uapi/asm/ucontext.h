@@ -11,8 +11,22 @@
 #include <linux/types.h>
 
 struct ucontext {
+#if __riscv_xlen == 64
+	union {
+		unsigned long	uc_flags;
+		__u64		__uc_flags;
+	};
+#else
 	unsigned long	  uc_flags;
+#endif
+#if __riscv_xlen == 64
+	union {
+		struct ucontext	*uc_link;
+		__u64		__uc_link;
+	};
+#else
 	struct ucontext	 *uc_link;
+#endif
 	stack_t		  uc_stack;
 	sigset_t	  uc_sigmask;
 	/*
