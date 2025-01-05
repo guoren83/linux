@@ -21,7 +21,14 @@
 
 struct nfs_string {
 	unsigned int len;
+#if __riscv_xlen == 64
+	union {
+		const char __user * data;
+		__u64 __data;
+	};
+#else
 	const char __user * data;
+#endif
 };
 
 struct nfs4_mount_data {
@@ -53,7 +60,14 @@ struct nfs4_mount_data {
 
 	/* Pseudo-flavours to use for authentication. See RFC2623 */
 	int auth_flavourlen;			/* 1 */
+#if __riscv_xlen == 64
+	union {
+		int __user *auth_flavours;		/* 1 */
+		__u64 __auth_flavours;
+	};
+#else
 	int __user *auth_flavours;		/* 1 */
+#endif
 };
 
 /* bits in the flags field */

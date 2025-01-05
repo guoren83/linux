@@ -155,7 +155,14 @@ struct atm_dev_stats {
 
 struct atm_iobuf {
 	int length;
+#if __riscv_xlen == 64
+	union {
+		void __user *buffer;
+		__u64 __buffer;
+	};
+#else
 	void __user *buffer;
+#endif
 };
 
 /* for ATM_GETCIRANGE / ATM_SETCIRANGE */

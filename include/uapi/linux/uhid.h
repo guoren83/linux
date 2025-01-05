@@ -130,7 +130,14 @@ struct uhid_create_req {
 	__u8 name[128];
 	__u8 phys[64];
 	__u8 uniq[64];
+#if __riscv_xlen == 64
+	union {
+		__u8 __user *rd_data;
+		__u64 __rd_data;
+	};
+#else
 	__u8 __user *rd_data;
+#endif
 	__u16 rd_size;
 
 	__u16 bus;

@@ -77,8 +77,19 @@ typedef struct capi_profile {
 #define CAPI_GET_PROFILE	_IOWR('C',0x09,struct capi_profile)
 
 typedef struct capi_manufacturer_cmd {
+#if __riscv_xlen == 64
+	union {
+		unsigned long cmd;
+		__u64 __cmd;
+	};
+	union {
+		void __user *data;
+		__u64 __data;
+	};
+#else
 	unsigned long cmd;
 	void __user *data;
+#endif
 } capi_manufacturer_cmd;
 
 /*
