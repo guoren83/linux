@@ -219,6 +219,9 @@ struct if_settings {
 		/* interface settings */
 		sync_serial_settings	__user *sync;
 		te1_settings		__user *te1;
+#if __riscv_xlen == 64
+		__u64			unused;
+#endif
 	} ifs_ifsu;
 };
 
@@ -288,6 +291,9 @@ struct ifconf  {
 	union {
 		char __user *ifcu_buf;
 		struct ifreq __user *ifcu_req;
+#if __riscv_xlen == 64
+		__u64 unused;
+#endif
 	} ifc_ifcu;
 };
 #endif /* __UAPI_DEF_IF_IFCONF */

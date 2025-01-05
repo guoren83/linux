@@ -54,7 +54,14 @@ struct uvc_xu_control_mapping {
 	__u32 v4l2_type;
 	__u32 data_type;
 
+#if __riscv_xlen == 64
+	union {
+		struct uvc_menu_info __user *menu_info;
+		__u64 __menu_info;
+	};
+#else
 	struct uvc_menu_info __user *menu_info;
+#endif
 	__u32 menu_count;
 
 	__u32 reserved[4];
@@ -66,7 +73,14 @@ struct uvc_xu_control_query {
 	__u8 query;		/* Video Class-Specific Request Code, */
 				/* defined in linux/usb/video.h A.8.  */
 	__u16 size;
+#if __riscv_xlen == 64
+	union {
+		__u8 __user *data;
+		__u64 __data;
+	};
+#else
 	__u8 __user *data;
+#endif
 };
 
 #define UVCIOC_CTRL_MAP		_IOWR('u', 0x20, struct uvc_xu_control_mapping)

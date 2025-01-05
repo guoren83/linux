@@ -51,7 +51,14 @@ struct usbtmc_request {
 
 struct usbtmc_ctrlrequest {
 	struct usbtmc_request req;
+#if __riscv_xlen == 64
+	union {
+		void __user *data; /* pointer to user space */
+		__u64 __data; /* pointer to user space */
+	};
+#else
 	void __user *data; /* pointer to user space */
+#endif
 } __attribute__ ((packed));
 
 struct usbtmc_termchar {
@@ -70,7 +77,14 @@ struct usbtmc_message {
 	__u32 transfer_size; /* size of bytes to transfer */
 	__u32 transferred; /* size of received/written bytes */
 	__u32 flags; /* bit 0: 0 = synchronous; 1 = asynchronous */
+#if __riscv_xlen == 64
+	union {
+		void __user *message; /* pointer to header and data in user space */
+		__u64 __message;
+	};
+#else
 	void __user *message; /* pointer to header and data in user space */
+#endif
 } __attribute__ ((packed));
 
 /* Request values for USBTMC driver's ioctl entry point */

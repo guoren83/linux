@@ -12,7 +12,14 @@ struct blkpg_ioctl_arg {
         int op;
         int flags;
         int datalen;
+#if __riscv_xlen == 64
+	union {
+		void __user *data;
+		__u64 __data;
+	};
+#else
         void __user *data;
+#endif
 };
 
 /* The subfunctions (for the op field) */

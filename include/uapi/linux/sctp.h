@@ -1024,6 +1024,9 @@ struct sctp_getaddrs_old {
 #else
 	struct sockaddr		*addrs;
 #endif
+#if (__riscv_xlen == 64) && (__SIZEOF_LONG__ == 4)
+	__u32			unused;
+#endif
 };
 
 struct sctp_getaddrs {

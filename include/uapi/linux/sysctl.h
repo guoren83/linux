@@ -33,13 +33,45 @@
 				   member of a struct __sysctl_args to have? */
 
 struct __sysctl_args {
+#if __riscv_xlen == 64
+	union {
+		int __user *name;
+		__u64 __name;
+	};
+#else
 	int __user *name;
+#endif
 	int nlen;
+#if __riscv_xlen == 64
+	union {
+		void __user *oldval;
+		__u64 __oldval;
+	};
+#else
 	void __user *oldval;
+#endif
+#if __riscv_xlen == 64
+	union {
+		size_t __user *oldlenp;
+		__u64 __oldlenp;
+	};
+#else
 	size_t __user *oldlenp;
+#endif
+#if __riscv_xlen == 64
+	union {
+		void __user *newval;
+		__u64 __newval;
+	};
+#else
 	void __user *newval;
+#endif
 	size_t newlen;
+#if __riscv_xlen == 64
+	unsigned long long __unused[4];
+#else
 	unsigned long __unused[4];
+#endif
 };
 
 /* Define sysctl names first */

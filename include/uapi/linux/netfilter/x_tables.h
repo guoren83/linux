@@ -18,7 +18,11 @@ struct xt_entry_match {
 			__u8 revision;
 		} user;
 		struct {
+#if __riscv_xlen == 64
+			__u64 match_size;
+#else
 			__u16 match_size;
+#endif
 
 			/* Used inside the kernel */
 			struct xt_match *match;
@@ -41,7 +45,11 @@ struct xt_entry_target {
 			__u8 revision;
 		} user;
 		struct {
+#if __riscv_xlen == 64
+			__u64 target_size;
+#else
 			__u16 target_size;
+#endif
 
 			/* Used inside the kernel */
 			struct xt_target *target;

@@ -838,7 +838,14 @@ struct btrfs_ioctl_received_subvol_args {
 struct btrfs_ioctl_send_args {
 	__s64 send_fd;			/* in */
 	__u64 clone_sources_count;	/* in */
+#if __riscv_xlen == 64
+	union {
+		__u64 __user *clone_sources;	/* in */
+		__u64 __pad;
+	};
+#else
 	__u64 __user *clone_sources;	/* in */
+#endif
 	__u64 parent_root;		/* in */
 	__u64 flags;			/* in */
 	__u32 version;			/* in */
@@ -959,9 +966,21 @@ struct btrfs_ioctl_encoded_io_args {
 	 * increase in the future). This must also be less than or equal to
 	 * unencoded_len.
 	 */
+#if __riscv_xlen == 64
+	union {
+		const struct iovec __user *iov;
+		const __u64 __iov;
+	};
+	/* Number of iovecs. */
+	union {
+		unsigned long iovcnt;
+		__u64 __iovcnt;
+	};
+#else
 	const struct iovec __user *iov;
 	/* Number of iovecs. */
 	unsigned long iovcnt;
+#endif
 	/*
 	 * Offset in file.
 	 *

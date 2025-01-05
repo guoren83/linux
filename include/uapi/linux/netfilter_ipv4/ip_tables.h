@@ -200,7 +200,14 @@ struct ipt_replace {
 	/* Number of counters (must be equal to current number of entries). */
 	unsigned int num_counters;
 	/* The old entries' counters. */
+#if __riscv_xlen == 64
+	union {
+		struct xt_counters __user *counters;
+		__u64 __counters;
+	};
+#else
 	struct xt_counters __user *counters;
+#endif
 
 	/* The entries (hang off end: not really an array). */
 	struct ipt_entry entries[];
