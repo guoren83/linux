@@ -122,15 +122,27 @@ struct file_dedupe_range {
 
 /* And dynamically-tunable limits and defaults: */
 struct files_stat_struct {
+#if __riscv_xlen == 64
+	unsigned long long nr_files;		/* read only */
+	unsigned long long nr_free_files;	/* read only */
+	unsigned long long max_files;		/* tunable */
+#else
 	unsigned long nr_files;		/* read only */
 	unsigned long nr_free_files;	/* read only */
 	unsigned long max_files;		/* tunable */
+#endif
 };
 
 struct inodes_stat_t {
+#if __riscv_xlen == 64
+	long long nr_inodes;
+	long long nr_unused;
+	long long dummy[5];		/* padding for sysctl ABI compatibility */
+#else
 	long nr_inodes;
 	long nr_unused;
 	long dummy[5];		/* padding for sysctl ABI compatibility */
+#endif
 };
 
 

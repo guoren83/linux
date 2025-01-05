@@ -7,7 +7,14 @@
 
 typedef union sigval {
 	int sival_int;
+#if __riscv_xlen == 64
+	union {
+		void __user *sival_ptr;
+		__u64 __sival_ptr;
+	};
+#else
 	void __user *sival_ptr;
+#endif
 } sigval_t;
 
 #define SI_MAX_SIZE	128
@@ -67,7 +74,14 @@ union __sifields {
 
 	/* SIGILL, SIGFPE, SIGSEGV, SIGBUS, SIGTRAP, SIGEMT */
 	struct {
+#if __riscv_xlen == 64
+		union {
+			void __user *_addr; /* faulting insn/memory ref. */
+			__u64 ___addr;
+		};
+#else
 		void __user *_addr; /* faulting insn/memory ref. */
+#endif
 
 #define __ADDR_BND_PKEY_PAD  (__alignof__(void *) < sizeof(short) ? \
 			      sizeof(short) : __alignof__(void *))
@@ -82,8 +96,23 @@ union __sifields {
 			/* used when si_code=SEGV_BNDERR */
 			struct {
 				char _dummy_bnd[__ADDR_BND_PKEY_PAD];
+#if __riscv_xlen == 64
+				union {
+					void __user *_lower;
+					__u64 ___lower;
+				};
+#else
 				void __user *_lower;
+#endif
+
+#if __riscv_xlen == 64
+				union {
+					void __user *_upper;
+					__u64 ___upper;
+				};
+#else
 				void __user *_upper;
+#endif
 			} _addr_bnd;
 			/* used when si_code=SEGV_PKUERR */
 			struct {
@@ -92,7 +121,14 @@ union __sifields {
 			} _addr_pkey;
 			/* used when si_code=TRAP_PERF */
 			struct {
+#if __riscv_xlen == 64
+				union {
+					unsigned long _data;
+					__u64 ___data;
+				};
+#else
 				unsigned long _data;
+#endif
 				__u32 _type;
 				__u32 _flags;
 			} _perf;
@@ -101,13 +137,27 @@ union __sifields {
 
 	/* SIGPOLL */
 	struct {
+#if __riscv_xlen == 64
+		union {
+			__ARCH_SI_BAND_T _band;	/* POLL_IN, POLL_OUT, POLL_MSG */
+			__u64 ___band;
+		};
+#else
 		__ARCH_SI_BAND_T _band;	/* POLL_IN, POLL_OUT, POLL_MSG */
+#endif
 		int _fd;
 	} _sigpoll;
 
 	/* SIGSYS */
 	struct {
+#if __riscv_xlen == 64
+		union {
+			void __user *_call_addr; /* calling user insn */
+			__u64 ___call_addr;
+		};
+#else
 		void __user *_call_addr; /* calling user insn */
+#endif
 		int _syscall;	/* triggering system call number */
 		unsigned int _arch;	/* AUDIT_ARCH_* of syscall */
 	} _sigsys;

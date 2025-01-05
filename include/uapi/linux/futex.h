@@ -108,7 +108,14 @@ struct futex_waitv {
  * changed.
  */
 struct robust_list {
+#if __riscv_xlen == 64
+	union {
+		struct robust_list __user *next;
+		u64 __next;
+	};
+#else
 	struct robust_list __user *next;
+#endif
 };
 
 /*
@@ -131,7 +138,11 @@ struct robust_list_head {
 	 * we keep userspace flexible, to freely shape its data-structure,
 	 * without hardcoding any particular offset into the kernel:
 	 */
+#if __riscv_xlen == 64
+	long long futex_offset;
+#else
 	long futex_offset;
+#endif
 
 	/*
 	 * The death of the thread may race with userspace setting
@@ -143,7 +154,14 @@ struct robust_list_head {
 	 * _might_ have taken. We check the owner TID in any case,
 	 * so only truly owned locks will be handled.
 	 */
+#if __riscv_xlen == 64
+	union {
+		struct robust_list __user *list_op_pending;
+		u64 __list_op_pending;
+	};
+#else
 	struct robust_list __user *list_op_pending;
+#endif
 };
 
 /*
