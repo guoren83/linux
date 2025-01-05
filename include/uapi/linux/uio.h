@@ -16,8 +16,19 @@
 
 struct iovec
 {
+#if __riscv_xlen == 64
+	union {
+		void __user *iov_base;	/* BSD uses caddr_t (1003.1g requires void *) */
+		__u64 __iov_base;
+	};
+	union {
+		__kernel_size_t iov_len; /* Must be size_t (1003.1g) */
+		__u64 __iov_len;
+	};
+#else
 	void __user *iov_base;	/* BSD uses caddr_t (1003.1g requires void *) */
 	__kernel_size_t iov_len; /* Must be size_t (1003.1g) */
+#endif
 };
 
 struct dmabuf_cmsg {
