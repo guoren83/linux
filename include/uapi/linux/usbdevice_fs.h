@@ -44,14 +44,28 @@ struct usbdevfs_ctrltransfer {
 	__u16 wIndex;
 	__u16 wLength;
 	__u32 timeout;  /* in milliseconds */
+#if __riscv_xlen == 64
+	union {
+		void __user *data;
+		__u64 __data;
+	};
+#else
  	void __user *data;
+#endif
 };
 
 struct usbdevfs_bulktransfer {
 	unsigned int ep;
 	unsigned int len;
 	unsigned int timeout; /* in milliseconds */
+#if __riscv_xlen == 64
+	union {
+		void __user *data;
+		__u64 __data;
+	};
+#else
 	void __user *data;
+#endif
 };
 
 struct usbdevfs_setinterface {
@@ -61,7 +75,14 @@ struct usbdevfs_setinterface {
 
 struct usbdevfs_disconnectsignal {
 	unsigned int signr;
+#if __riscv_xlen == 64
+	union {
+		void __user *context;
+		__u64 __context;
+	};
+#else
 	void __user *context;
+#endif
 };
 
 #define USBDEVFS_MAXDRIVERNAME 255
@@ -119,7 +140,14 @@ struct usbdevfs_urb {
 	unsigned char endpoint;
 	int status;
 	unsigned int flags;
+#if __riscv_xlen == 64
+	union {
+		void __user *buffer;
+		__u64 __buffer;
+	};
+#else
 	void __user *buffer;
+#endif
 	int buffer_length;
 	int actual_length;
 	int start_frame;
@@ -130,7 +158,14 @@ struct usbdevfs_urb {
 	int error_count;
 	unsigned int signr;	/* signal to be sent on completion,
 				  or 0 if none should be sent. */
+#if __riscv_xlen == 64
+	union {
+		void __user *usercontext;
+		__u64 __usercontext;
+	};
+#else
 	void __user *usercontext;
+#endif
 	struct usbdevfs_iso_packet_desc iso_frame_desc[];
 };
 
@@ -139,7 +174,14 @@ struct usbdevfs_ioctl {
 	int	ifno;		/* interface 0..N ; negative numbers reserved */
 	int	ioctl_code;	/* MUST encode size + direction of data so the
 				 * macros in <asm/ioctl.h> give correct values */
+#if __riscv_xlen == 64
+	union {
+		void __user *data;	/* param buffer (in, or out) */
+		__u64 __pad;
+	};
+#else
 	void __user *data;	/* param buffer (in, or out) */
+#endif
 };
 
 /* You can do most things with hubs just through control messages,
@@ -195,9 +237,17 @@ struct usbdevfs_streams {
 #define USBDEVFS_SUBMITURB         _IOR('U', 10, struct usbdevfs_urb)
 #define USBDEVFS_SUBMITURB32       _IOR('U', 10, struct usbdevfs_urb32)
 #define USBDEVFS_DISCARDURB        _IO('U', 11)
+#if __riscv_xlen == 64
+#define USBDEVFS_REAPURB           _IOW('U', 12, __u64)
+#else
 #define USBDEVFS_REAPURB           _IOW('U', 12, void *)
+#endif
 #define USBDEVFS_REAPURB32         _IOW('U', 12, __u32)
+#if __riscv_xlen == 64
+#define USBDEVFS_REAPURBNDELAY     _IOW('U', 13, __u64)
+#else
 #define USBDEVFS_REAPURBNDELAY     _IOW('U', 13, void *)
+#endif
 #define USBDEVFS_REAPURBNDELAY32   _IOW('U', 13, __u32)
 #define USBDEVFS_DISCSIGNAL        _IOR('U', 14, struct usbdevfs_disconnectsignal)
 #define USBDEVFS_DISCSIGNAL32      _IOR('U', 14, struct usbdevfs_disconnectsignal32)
