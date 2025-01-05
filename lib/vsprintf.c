@@ -771,7 +771,7 @@ static inline int __ptr_to_hashval(const void *ptr, unsigned long *hashval_out)
 	/* Pairs with smp_wmb() after writing ptr_key. */
 	smp_rmb();
 
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	hashval = (unsigned long)siphash_1u64((u64)ptr, &ptr_key);
 	/*
 	 * Mask off the first 32 bits, this makes explicit that we have
