@@ -1570,7 +1570,14 @@ struct vfio_iommu_type1_dma_map {
 struct vfio_bitmap {
 	__u64        pgsize;	/* page size for bitmap in bytes */
 	__u64        size;	/* in bytes */
+	#if __riscv_xlen == 64
+	union {
+		__u64 __user *data;	/* one bit per page */
+		__u64 __data;
+	};
+	#else
 	__u64 __user *data;	/* one bit per page */
+	#endif
 };
 
 /**

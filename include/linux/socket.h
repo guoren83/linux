@@ -81,12 +81,47 @@ struct msghdr {
 };
 
 struct user_msghdr {
+#if __riscv_xlen == 64
+	union {
+		void		__user *msg_name;	/* ptr to socket address structure */
+		u64		__msg_name;
+	};
+#else
 	void		__user *msg_name;	/* ptr to socket address structure */
+#endif
 	int		msg_namelen;		/* size of socket address structure */
+#if __riscv_xlen == 64
+	union {
+		struct iovec	__user *msg_iov;	/* scatter/gather array */
+		u64		__msg_iov;
+	};
+#else
 	struct iovec	__user *msg_iov;	/* scatter/gather array */
+#endif
+#if __riscv_xlen == 64
+	union {
+		__kernel_size_t	msg_iovlen;		/* # elements in msg_iov */
+		u64 __msg_iovlen;
+	};
+#else
 	__kernel_size_t	msg_iovlen;		/* # elements in msg_iov */
+#endif
+#if __riscv_xlen == 64
+	union {
+		void		__user *msg_control;	/* ancillary data */
+		u64		__msg_control;
+	};
+#else
 	void		__user *msg_control;	/* ancillary data */
+#endif
+#if __riscv_xlen == 64
+	union {
+		__kernel_size_t	msg_controllen;		/* ancillary data buffer length */
+		u64	__msg_controllen;
+	};
+#else
 	__kernel_size_t	msg_controllen;		/* ancillary data buffer length */
+#endif
 	unsigned int	msg_flags;		/* flags on received message */
 };
 

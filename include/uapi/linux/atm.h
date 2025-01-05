@@ -234,7 +234,14 @@ static __inline__ int atmpvc_addr_in_use(struct sockaddr_atmpvc addr)
 struct atmif_sioc {
 	int number;
 	int length;
+#if __riscv_xlen == 64
+	union {
+		void __user *arg;
+		__u64 __arg;
+	};
+#else
 	void __user *arg;
+#endif
 };
 
 

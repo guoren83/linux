@@ -22,7 +22,14 @@ struct __kernel_sockaddr_storage {
 				/* space to achieve desired size, */
 				/* _SS_MAXSIZE value minus size of ss_family */
 		};
+#if __riscv_xlen == 64
+		union {
+			void *__align; /* implementation specific desired alignment */
+			u64 ___align;
+		};
+#else
 		void *__align; /* implementation specific desired alignment */
+#endif
 	};
 };
 

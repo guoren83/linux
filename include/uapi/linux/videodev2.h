@@ -1898,7 +1898,14 @@ struct v4l2_ext_controls {
 	__u32 error_idx;
 	__s32 request_fd;
 	__u32 reserved[1];
+#if __riscv_xlen == 64
+	union {
+		struct v4l2_ext_control *controls;
+		__u64 __controls;
+	};
+#else
 	struct v4l2_ext_control *controls;
+#endif
 };
 
 #define V4L2_CTRL_ID_MASK	  (0x0fffffff)

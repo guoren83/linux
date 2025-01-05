@@ -59,7 +59,14 @@ struct npioctl {
 
 /* Structure describing a CCP configuration option, for PPPIOCSCOMPRESS */
 struct ppp_option_data {
+#if __riscv_xlen == 64
+	union {
+		__u8	__user *ptr;
+		__u64	__ptr;
+	};
+#else
 	__u8	__user *ptr;
+#endif
 	__u32	length;
 	int	transmit;
 };
