@@ -73,19 +73,54 @@ typedef unsigned long old_sigset_t;
 
 #ifndef __KERNEL__
 struct sigaction {
+#if __riscv_xlen == 64
+	union {
+		__sighandler_t sa_handler;
+		__u64 __sa_handler;
+	};
+#else
 	__sighandler_t sa_handler;
+#endif
+#if __riscv_xlen == 64
+	union {
+		unsigned long sa_flags;
+		__u64 __sa_flags;
+	};
+#else
 	unsigned long sa_flags;
+#endif
 #ifdef SA_RESTORER
+#if __riscv_xlen == 64
+	union {
+		__sigrestore_t sa_restorer;
+		__u64 __sa_restorer;
+	};
+#else
 	__sigrestore_t sa_restorer;
+#endif
 #endif
 	sigset_t sa_mask;		/* mask last for extensibility */
 };
 #endif
 
 typedef struct sigaltstack {
+#if __riscv_xlen == 64
+	union {
+		void __user *ss_sp;
+		__u64 __ss_sp;
+	};
+#else
 	void __user *ss_sp;
+#endif
 	int ss_flags;
+#if __riscv_xlen == 64
+	union {
+		__kernel_size_t ss_size;
+		__u64 __ss_size;
+	};
+#else
 	__kernel_size_t ss_size;
+#endif
 } stack_t;
 
 #endif /* __ASSEMBLY__ */
