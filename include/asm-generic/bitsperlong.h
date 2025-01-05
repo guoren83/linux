@@ -6,7 +6,9 @@
 
 
 #ifdef CONFIG_64BIT
+#ifndef BITS_PER_LONG
 #define BITS_PER_LONG 64
+#endif
 #else
 #define BITS_PER_LONG 32
 #endif /* CONFIG_64BIT */
