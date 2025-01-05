@@ -111,7 +111,14 @@ struct __riscv_v_ext_state {
 	xlen_t vtype;
 	xlen_t vcsr;
 	xlen_t vlenb;
+#if __riscv_xlen == 64
+	union {
+		void *datap;
+		__u64 __datap;
+	};
+#else
 	void *datap;
+#endif
 	/*
 	 * In signal handler, datap will be set a correct user stack offset
 	 * and vector registers will be copied to the address of datap
