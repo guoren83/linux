@@ -571,7 +571,11 @@ static inline void *folio_get_private(struct folio *folio)
 	return folio->private;
 }
 
+#ifdef CONFIG_64BIT
+typedef unsigned long long vm_flags_t;
+#else
 typedef unsigned long vm_flags_t;
+#endif
 
 /*
  * A region containing a mapping of a non-memory backed file under NOMMU
