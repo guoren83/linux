@@ -412,7 +412,11 @@ extern unsigned int kobjsize(const void *objp);
 
 #ifdef CONFIG_HAVE_ARCH_USERFAULTFD_MINOR
 # define VM_UFFD_MINOR_BIT	38
+#ifdef CONFIG_64BIT
+# define VM_UFFD_MINOR		BIT_ULL(VM_UFFD_MINOR_BIT)	/* UFFD minor faults */
+#else
 # define VM_UFFD_MINOR		BIT(VM_UFFD_MINOR_BIT)	/* UFFD minor faults */
+#endif
 #else /* !CONFIG_HAVE_ARCH_USERFAULTFD_MINOR */
 # define VM_UFFD_MINOR		VM_NONE
 #endif /* CONFIG_HAVE_ARCH_USERFAULTFD_MINOR */
@@ -426,14 +430,14 @@ extern unsigned int kobjsize(const void *objp);
  */
 #ifdef CONFIG_64BIT
 #define VM_ALLOW_ANY_UNCACHED_BIT	39
-#define VM_ALLOW_ANY_UNCACHED		BIT(VM_ALLOW_ANY_UNCACHED_BIT)
+#define VM_ALLOW_ANY_UNCACHED		BIT_ULL(VM_ALLOW_ANY_UNCACHED_BIT)
 #else
 #define VM_ALLOW_ANY_UNCACHED		VM_NONE
 #endif
 
 #ifdef CONFIG_64BIT
 #define VM_DROPPABLE_BIT	40
-#define VM_DROPPABLE		BIT(VM_DROPPABLE_BIT)
+#define VM_DROPPABLE		BIT_ULL(VM_DROPPABLE_BIT)
 #elif defined(CONFIG_PPC32)
 #define VM_DROPPABLE		VM_ARCH_1
 #else
@@ -442,7 +446,7 @@ extern unsigned int kobjsize(const void *objp);
 
 #ifdef CONFIG_64BIT
 /* VM is sealed, in vm_flags */
-#define VM_SEALED	_BITUL(63)
+#define VM_SEALED	_BITULL(63)
 #endif
 
 /* Bits set in the VMA until the stack is in its final location */
