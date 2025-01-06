@@ -40,7 +40,11 @@
 
 /* number of bytes addressable by LDX/STX insn with 16-bit 'off' field */
 #define GUARD_SZ (1ull << sizeof_field(struct bpf_insn, off) * 8)
+#if BITS_PER_LONG == 64
 #define KERN_VM_SZ (SZ_4G + GUARD_SZ)
+#else
+#define KERN_VM_SZ (SZ_64M + GUARD_SZ)
+#endif
 
 struct bpf_arena {
 	struct bpf_map map;
@@ -335,8 +339,10 @@ static unsigned long arena_get_unmapped_area(struct file *filp, unsigned long ad
 	ret = mm_get_unmapped_area(current->mm, filp, addr, len * 2, 0, flags);
 	if (IS_ERR_VALUE(ret))
 		return ret;
+#if BITS_PER_LONG == 64
 	if ((ret >> 32) == ((ret + len - 1) >> 32))
 		return ret;
+#endif
 	if (WARN_ON_ONCE(arena->user_vm_start))
 		/* checks at map creation time should prevent this */
 		return -EFAULT;
