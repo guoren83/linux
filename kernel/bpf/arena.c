@@ -40,7 +40,14 @@
 
 /* number of bytes addressable by LDX/STX insn with 16-bit 'off' field */
 #define GUARD_SZ (1ull << sizeof_field(struct bpf_insn, off) * 8)
-#define KERN_VM_SZ (SZ_4G + GUARD_SZ)
+
+#if BITS_PER_LONG == 64
+#define KERN_ARENA_SZ SZ_4G
+#else
+#define KERN_ARENA_SZ SZ_256M
+#endif
+
+#define KERN_VM_SZ (KERN_ARENA_SZ + GUARD_SZ)
 
 struct bpf_arena {
 	struct bpf_map map;
@@ -115,7 +122,7 @@ static struct bpf_map *arena_map_alloc(union bpf_attr *attr)
 		return ERR_PTR(-EINVAL);
 
 	vm_range = (u64)attr->max_entries * PAGE_SIZE;
-	if (vm_range > SZ_4G)
+	if (vm_range > KERN_ARENA_SZ)
 		return ERR_PTR(-E2BIG);
 
 	if ((attr->map_extra >> 32) != ((attr->map_extra + vm_range - 1) >> 32))
@@ -321,7 +328,7 @@ static unsigned long arena_get_unmapped_area(struct file *filp, unsigned long ad
 
 	if (pgoff)
 		return -EINVAL;
-	if (len > SZ_4G)
+	if (len > KERN_ARENA_SZ)
 		return -E2BIG;
 
 	/* if user_vm_start was specified at arena creation time */
@@ -337,12 +344,14 @@ static unsigned long arena_get_unmapped_area(struct file *filp, unsigned long ad
 	ret = mm_get_unmapped_area(current->mm, filp, addr, len * 2, 0, flags);
 	if (IS_ERR_VALUE(ret))
 		return ret;
+#if BITS_PER_LONG == 64
 	if ((ret >> 32) == ((ret + len - 1) >> 32))
 		return ret;
+#endif
 	if (WARN_ON_ONCE(arena->user_vm_start))
 		/* checks at map creation time should prevent this */
 		return -EFAULT;
-	return round_up(ret, SZ_4G);
+	return round_up(ret, KERN_ARENA_SZ);
 }
 
 static int arena_map_mmap(struct bpf_map *map, struct vm_area_struct *vma)
@@ -366,7 +375,7 @@ static int arena_map_mmap(struct bpf_map *map, struct vm_area_struct *vma)
 		return -EBUSY;
 
 	/* Earlier checks should prevent this */
-	if (WARN_ON_ONCE(vma->vm_end - vma->vm_start > SZ_4G || vma->vm_pgoff))
+	if (WARN_ON_ONCE(vma->vm_end - vma->vm_start > KERN_ARENA_SZ || vma->vm_pgoff))
 		return -EFAULT;
 
 	if (remember_vma(arena, vma))
