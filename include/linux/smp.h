@@ -24,6 +24,9 @@ struct __call_single_data {
 	struct __call_single_node node;
 	smp_call_func_t func;
 	void *info;
+#if IS_ENABLED(CONFIG_64BIT) && (BITS_PER_LONG == 32)
+	char __pad[12];
+#endif
 };
 
 #define CSD_INIT(_func, _info) \

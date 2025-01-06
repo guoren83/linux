@@ -65,7 +65,7 @@ struct dst_entry {
 	 * __rcuref wants to be on a different cache line from
 	 * input/output/ops or performance tanks badly
 	 */
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	rcuref_t		__rcuref;	/* 64-bit offset 64 */
 #endif
 	int			__use;
@@ -74,7 +74,7 @@ struct dst_entry {
 	short			error;
 	short			__pad;
 	__u32			tclassid;
-#ifndef CONFIG_64BIT
+#if BITS_PER_LONG == 32
 	struct lwtunnel_state   *lwtstate;
 	rcuref_t		__rcuref;	/* 32-bit offset 64 */
 #endif
@@ -89,7 +89,7 @@ struct dst_entry {
 	 */
 	struct list_head	rt_uncached;
 	struct uncached_list	*rt_uncached_list;
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	struct lwtunnel_state   *lwtstate;
 #endif
 };

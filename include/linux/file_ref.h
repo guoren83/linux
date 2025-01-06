@@ -27,7 +27,7 @@
  * 0xFFFFFFFFFFFFFFFFUL
  */
 
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 #define FILE_REF_ONEREF		0x0000000000000000UL
 #define FILE_REF_MAXREF		0x7FFFFFFFFFFFFFFFUL
 #define FILE_REF_SATURATED	0xA000000000000000UL
@@ -44,7 +44,7 @@
 #endif
 
 typedef struct {
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	atomic64_t refcnt;
 #else
 	atomic_t refcnt;
