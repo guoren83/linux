@@ -2873,8 +2873,12 @@ static int compat_tty_tiocgserial(struct tty_struct *tty,
 	err = tty->ops->get_serial(tty, &v);
 	if (!err) {
 		memcpy(&v32, &v, offsetof(struct serial_struct32, iomem_base));
+#if BITS_PER_LONG == 64
 		v32.iomem_base = (unsigned long)v.iomem_base >> 32 ?
 			0xfffffff : ptr_to_compat(v.iomem_base);
+#else
+		v32.iomem_base = ptr_to_compat(v.iomem_base);
+#endif
 		v32.iomem_reg_shift = v.iomem_reg_shift;
 		v32.port_high = v.port_high;
 		if (copy_to_user(ss, &v32, sizeof(v32)))
