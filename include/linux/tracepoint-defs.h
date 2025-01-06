@@ -14,7 +14,11 @@
 struct static_call_key;
 
 struct trace_print_flags {
+#ifdef CONFIG_64BIT
+	unsigned long long	mask;
+#else
 	unsigned long		mask;
+#endif
 	const char		*name;
 };
 
