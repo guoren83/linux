@@ -12,7 +12,7 @@ struct mod_arch_specific
 };
 #endif
 
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 #define Elf_Shdr	Elf64_Shdr
 #define Elf_Phdr	Elf64_Phdr
 #define Elf_Sym		Elf64_Sym
