@@ -45,7 +45,7 @@ struct relocation_handlers {
  */
 static bool riscv_insn_valid_32bit_offset(ptrdiff_t val)
 {
-#ifdef CONFIG_32BIT
+#if BITS_PER_LONG == 32
 	return true;
 #else
 	return (-(1L << 31) - (1L << 11)) <= val && val < ((1L << 31) - (1L << 11));
