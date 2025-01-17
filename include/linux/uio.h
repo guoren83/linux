@@ -17,7 +17,13 @@ typedef unsigned int __bitwise iov_iter_extraction_t;
 
 struct kvec {
 	void *iov_base; /* and that should *never* hold a userland pointer */
+#if defined(CONFIG_64BIT) && (BITS_PER_LONG == 32)
+	u32  __iov_base;
+#endif
 	size_t iov_len;
+#if defined(CONFIG_64BIT) && (BITS_PER_LONG == 32)
+	u32  __iov_len;
+#endif
 };
 
 enum iter_type {
