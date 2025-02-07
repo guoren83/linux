@@ -22,7 +22,7 @@
 #define ELF_ARCH	EM_RISCV
 
 #ifndef ELF_CLASS
-#if BITS_PER_LONG == 64
+#ifdef CONFIG_64BIT
 #define ELF_CLASS	ELFCLASS64
 #else
 #define ELF_CLASS	ELFCLASS32

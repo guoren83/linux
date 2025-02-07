@@ -88,18 +88,18 @@
 .endm
 
 #ifdef CONFIG_SMP
-#ifdef CONFIG_32BIT
+#if BITS_PER_LONG == 32
 #define PER_CPU_OFFSET_SHIFT 2
 #else
 #define PER_CPU_OFFSET_SHIFT 3
 #endif
 
 .macro asm_per_cpu dst sym tmp
-	REG_L \tmp, TASK_TI_CPU_NUM(tp)
+	PTR_L \tmp, TASK_TI_CPU_NUM(tp)
 	slli  \tmp, \tmp, PER_CPU_OFFSET_SHIFT
 	la    \dst, __per_cpu_offset
 	add   \dst, \dst, \tmp
-	REG_L \tmp, 0(\dst)
+	PTR_L \tmp, 0(\dst)
 	la    \dst, \sym
 	add   \dst, \dst, \tmp
 .endm
@@ -111,7 +111,7 @@
 
 .macro load_per_cpu dst ptr tmp
 	asm_per_cpu \dst \ptr \tmp
-	REG_L \dst, 0(\dst)
+	PTR_L \dst, 0(\dst)
 .endm
 
 #ifdef CONFIG_SHADOW_CALL_STACK

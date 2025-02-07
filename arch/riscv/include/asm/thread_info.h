@@ -71,7 +71,7 @@ struct thread_info {
 	 * Used in handle_exception() to save a0, a1 and a2 before knowing if we
 	 * can access the kernel stack.
 	 */
-	unsigned long		a0, a1, a2;
+	xlen_t		a0, a1, a2;
 #endif
 };
 
