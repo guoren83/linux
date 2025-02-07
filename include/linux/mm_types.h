@@ -370,7 +370,7 @@ struct folio {
 			atomic_t _entire_mapcount;
 			atomic_t _nr_pages_mapped;
 			atomic_t _pincount;
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 			unsigned int _folio_nr_pages;
 #endif
 	/* private: the union with struct page is transitional */
