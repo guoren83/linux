@@ -23,8 +23,8 @@
 #include <asm/ptrace.h>
 
 static struct irq_domain *intc_domain;
-static unsigned int riscv_intc_nr_irqs __ro_after_init = BITS_PER_LONG;
-static unsigned int riscv_intc_custom_base __ro_after_init = BITS_PER_LONG;
+static unsigned int riscv_intc_nr_irqs __ro_after_init = __riscv_xlen;
+static unsigned int riscv_intc_custom_base __ro_after_init = __riscv_xlen;
 static unsigned int riscv_intc_custom_nr_irqs __ro_after_init;
 
 static void riscv_intc_irq(struct pt_regs *regs)

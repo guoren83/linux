@@ -20,7 +20,7 @@
 
 /* Load task_scs_sp(current) to gp. */
 .macro scs_load_current
-	REG_L	gp, TASK_TI_SCS_SP(tp)
+	PTR_L	gp, TASK_TI_SCS_SP(tp)
 .endm
 
 /* Load task_scs_sp(current) to gp, but only if tp has changed. */
@@ -32,7 +32,7 @@ _skip_scs:
 
 /* Save gp to task_scs_sp(current). */
 .macro scs_save_current
-	REG_S	gp, TASK_TI_SCS_SP(tp)
+	PTR_S	gp, TASK_TI_SCS_SP(tp)
 .endm
 
 #else /* CONFIG_SHADOW_CALL_STACK */

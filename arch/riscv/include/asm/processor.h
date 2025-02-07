@@ -24,7 +24,7 @@
 	base;							\
 })
 
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 #define DEFAULT_MAP_WINDOW	(UL(1) << (MMAP_VA_BITS - 1))
 #define STACK_TOP_MAX		TASK_SIZE_64
 #else

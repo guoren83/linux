@@ -16,7 +16,7 @@
 #define __ARCH_WANT_COMPAT_FADVISE64_64
 #endif
 
-#if defined(__LP64__) && !defined(__SYSCALL_COMPAT)
+#if (__riscv_xlen == 64) && !defined(__SYSCALL_COMPAT)
 #define __ARCH_WANT_NEW_STAT
 #define __ARCH_WANT_SET_GET_RLIMIT
 #endif /* __LP64__ */
