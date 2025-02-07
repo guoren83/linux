@@ -682,7 +682,7 @@ static inline void folio_set_order(struct folio *folio, unsigned int order)
 		return;
 
 	folio->_flags_1 = (folio->_flags_1 & ~0xffUL) | order;
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	folio->_folio_nr_pages = 1U << order;
 #endif
 }
