@@ -2058,7 +2058,7 @@ static inline long folio_nr_pages(const struct folio *folio)
 {
 	if (!folio_test_large(folio))
 		return 1;
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	return folio->_folio_nr_pages;
 #else
 	return 1L << (folio->_flags_1 & 0xff);
@@ -2083,7 +2083,7 @@ static inline unsigned long compound_nr(struct page *page)
 
 	if (!test_bit(PG_head, &folio->flags))
 		return 1;
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	return folio->_folio_nr_pages;
 #else
 	return 1L << (folio->_flags_1 & 0xff);
