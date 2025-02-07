@@ -148,7 +148,7 @@ static void __init print_vm_layout(void)
 		(unsigned long)VMEMMAP_END);
 	print_ml("vmalloc", (unsigned long)VMALLOC_START,
 		(unsigned long)VMALLOC_END);
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	print_ml("modules", (unsigned long)MODULES_VADDR,
 		(unsigned long)MODULES_END);
 #endif
@@ -160,7 +160,9 @@ static void __init print_vm_layout(void)
 #endif
 
 		print_ml("kernel", (unsigned long)kernel_map.virt_addr,
-			 (unsigned long)ADDRESS_SPACE_END);
+				   (BITS_PER_LONG == 64) ?
+				   (unsigned long)ADDRESS_SPACE_END :
+				   (unsigned long)PAGE_OFFSET);
 	}
 }
 #else
@@ -169,7 +171,11 @@ static void print_vm_layout(void) { }
 
 void __init mem_init(void)
 {
+#if BITS_PER_LONG == 64
 	bool swiotlb = max_pfn > PFN_DOWN(dma32_phys_limit);
+#else
+	bool swiotlb = false;
+#endif
 #ifdef CONFIG_FLATMEM
 	BUG_ON(!mem_map);
 #endif /* CONFIG_FLATMEM */
@@ -307,7 +313,7 @@ static void __init setup_bootmem(void)
 		memblock_reserve(dtb_early_pa, fdt_totalsize(dtb_early_va));
 
 	dma_contiguous_reserve(dma32_phys_limit);
-	if (IS_ENABLED(CONFIG_64BIT))
+	if (BITS_PER_LONG == 64)
 		hugetlb_cma_reserve(PUD_SHIFT - PAGE_SHIFT);
 }
 
@@ -1106,7 +1112,7 @@ asmlinkage void __init setup_vm(uintptr_t dtb_pa)
 	kernel_map.virt_addr = KERNEL_LINK_ADDR + kernel_map.virt_offset;
 
 #ifdef CONFIG_XIP_KERNEL
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	kernel_map.page_offset = PAGE_OFFSET_L3;
 #else
 	kernel_map.page_offset = _AC(CONFIG_PAGE_OFFSET, UL);
@@ -1159,7 +1165,11 @@ asmlinkage void __init setup_vm(uintptr_t dtb_pa)
 	 * The last 4K bytes of the addressable memory can not be mapped because
 	 * of IS_ERR_VALUE macro.
 	 */
+#if (BITS_PER_LONG == 64)
 	BUG_ON((kernel_map.virt_addr + kernel_map.size) > ADDRESS_SPACE_END - SZ_4K);
+#else
+	BUG_ON((kernel_map.virt_addr + kernel_map.size) > PAGE_OFFSET - SZ_4K);
+#endif
 #endif
 
 #ifdef CONFIG_RELOCATABLE

@@ -19,9 +19,14 @@
 
 #define ADDRESS_SPACE_END	(UL(-1))
 
+#ifdef CONFIG_64BIT
 #if BITS_PER_LONG == 64
 /* Leave 2GB for kernel and BPF at the end of the address space */
 #define KERNEL_LINK_ADDR	(ADDRESS_SPACE_END - SZ_2G + 1)
+#elif BITS_PER_LONG == 32
+/* Leave 64MB for kernel and BPF at the end of the address space */
+#define KERNEL_LINK_ADDR	(PAGE_OFFSET - SZ_64M)
+#endif
 #else
 #define KERNEL_LINK_ADDR	PAGE_OFFSET
 #endif
@@ -42,15 +47,18 @@
 #endif
 
 #define VMALLOC_SIZE     (KERN_VIRT_SIZE >> 1)
+#ifdef CONFIG_ABI_RV64ILP32
+#define VMALLOC_END      KERNEL_LINK_ADDR
+#else
 #define VMALLOC_END      PAGE_OFFSET
-#define VMALLOC_START    (PAGE_OFFSET - VMALLOC_SIZE)
+#endif
+#define VMALLOC_START    (VMALLOC_END - VMALLOC_SIZE)
 
 #define BPF_JIT_REGION_SIZE	(SZ_128M)
-#if BITS_PER_LONG == 64
 #define BPF_JIT_REGION_START	(BPF_JIT_REGION_END - BPF_JIT_REGION_SIZE)
+#if BITS_PER_LONG == 64
 #define BPF_JIT_REGION_END	(MODULES_END)
 #else
-#define BPF_JIT_REGION_START	(PAGE_OFFSET - BPF_JIT_REGION_SIZE)
 #define BPF_JIT_REGION_END	(VMALLOC_END)
 #endif
 
