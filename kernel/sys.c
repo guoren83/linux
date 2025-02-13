@@ -2008,7 +2008,11 @@ out:
 static int prctl_set_mm_map(int opt, const void __user *addr, unsigned long data_size)
 {
 	struct prctl_mm_map prctl_map = { .exe_fd = (u32)-1, };
+#ifdef CONFIG_64BIT
+	unsigned long long user_auxv[AT_VECTOR_SIZE];
+#else
 	unsigned long user_auxv[AT_VECTOR_SIZE];
+#endif
 	struct mm_struct *mm = current->mm;
 	int error;
 
@@ -2122,7 +2126,11 @@ static int prctl_set_auxv(struct mm_struct *mm, unsigned long addr,
 	 * up to the caller to provide sane values here, otherwise userspace
 	 * tools which use this vector might be unhappy.
 	 */
+#ifdef CONFIG_64BIT
+	unsigned long long user_auxv[AT_VECTOR_SIZE] = {};
+#else
 	unsigned long user_auxv[AT_VECTOR_SIZE] = {};
+#endif
 
 	if (len > sizeof(user_auxv))
 		return -EINVAL;
