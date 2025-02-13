@@ -962,7 +962,11 @@ struct mm_struct {
 		unsigned long start_brk, brk, start_stack;
 		unsigned long arg_start, arg_end, env_start, env_end;
 
+#ifdef CONFIG_64BIT
+		unsigned long long saved_auxv[AT_VECTOR_SIZE]; /* for /proc/PID/auxv */
+#else
 		unsigned long saved_auxv[AT_VECTOR_SIZE]; /* for /proc/PID/auxv */
+#endif
 
 		struct percpu_counter rss_stat[NR_MM_COUNTERS];
 
