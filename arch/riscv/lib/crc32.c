@@ -59,12 +59,12 @@
  */
 # define CRC32_POLY_QT_BE	0x04d101df481b4e5a
 
-static inline u64 crc32_le_prep(u32 crc, unsigned long const *ptr)
+static inline u64 crc32_le_prep(u32 crc, u64 const *ptr)
 {
 	return (u64)crc ^ (__force u64)__cpu_to_le64(*ptr);
 }
 
-static inline u32 crc32_le_zbc(unsigned long s, u32 poly, unsigned long poly_qt)
+static inline u32 crc32_le_zbc(u64 s, u32 poly, u64 poly_qt)
 {
 	u32 crc;
 
@@ -85,7 +85,7 @@ static inline u32 crc32_le_zbc(unsigned long s, u32 poly, unsigned long poly_qt)
 	return crc;
 }
 
-static inline u64 crc32_be_prep(u32 crc, unsigned long const *ptr)
+static inline u64 crc32_be_prep(u32 crc, u64 const *ptr)
 {
 	return ((u64)crc << 32) ^ (__force u64)__cpu_to_be64(*ptr);
 }
@@ -131,7 +131,7 @@ static inline u32 crc32_be_prep(u32 crc, unsigned long const *ptr)
 # error "Unexpected __riscv_xlen"
 #endif
 
-static inline u32 crc32_be_zbc(unsigned long s)
+static inline u32 crc32_be_zbc(xlen_t s)
 {
 	u32 crc;
 
@@ -156,7 +156,7 @@ typedef u32 (*fallback)(u32 crc, unsigned char const *p, size_t len);
 
 static inline u32 crc32_le_unaligned(u32 crc, unsigned char const *p,
 				     size_t len, u32 poly,
-				     unsigned long poly_qt)
+				     xlen_t poly_qt)
 {
 	size_t bits = len * 8;
 	xlen_t s = 0;
@@ -181,8 +181,8 @@ static inline u32 __pure crc32_le_generic(u32 crc, unsigned char const *p,
 					  fallback crc_fb)
 {
 	size_t offset, head_len, tail_len;
-	unsigned long const *p_ul;
-	unsigned long s;
+	xlen_t const *p_ul;
+	xlen_t s;
 
 	asm goto(ALTERNATIVE("j %l[legacy]", "nop", 0,
 			     RISCV_ISA_EXT_ZBC, 1)
@@ -199,7 +199,7 @@ static inline u32 __pure crc32_le_generic(u32 crc, unsigned char const *p,
 
 	tail_len = len & OFFSET_MASK;
 	len = len >> STEP_ORDER;
-	p_ul = (unsigned long const *)p;
+	p_ul = (xlen_t const *)p;
 
 	for (int i = 0; i < len; i++) {
 		s = crc32_le_prep(crc, p_ul);
@@ -234,7 +234,7 @@ static inline u32 crc32_be_unaligned(u32 crc, unsigned char const *p,
 				     size_t len)
 {
 	size_t bits = len * 8;
-	unsigned long s = 0;
+	xlen_t s = 0;
 	u32 crc_low = 0;
 
 	s = 0;
@@ -245,7 +245,7 @@ static inline u32 crc32_be_unaligned(u32 crc, unsigned char const *p,
 		s ^= crc >> (32 - bits);
 		crc_low = crc << bits;
 	} else {
-		s ^= (unsigned long)crc << (bits - 32);
+		s ^= (xlen_t)crc << (bits - 32);
 	}
 
 	crc = crc32_be_zbc(s);
@@ -257,8 +257,8 @@ static inline u32 crc32_be_unaligned(u32 crc, unsigned char const *p,
 u32 __pure crc32_be(u32 crc, unsigned char const *p, size_t len)
 {
 	size_t offset, head_len, tail_len;
-	unsigned long const *p_ul;
-	unsigned long s;
+	xlen_t const *p_ul;
+	xlen_t s;
 
 	asm goto(ALTERNATIVE("j %l[legacy]", "nop", 0,
 			     RISCV_ISA_EXT_ZBC, 1)
@@ -275,7 +275,7 @@ u32 __pure crc32_be(u32 crc, unsigned char const *p, size_t len)
 
 	tail_len = len & OFFSET_MASK;
 	len = len >> STEP_ORDER;
-	p_ul = (unsigned long const *)p;
+	p_ul = (xlen_t const *)p;
 
 	for (int i = 0; i < len; i++) {
 		s = crc32_be_prep(crc, p_ul);
