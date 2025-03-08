@@ -21,7 +21,7 @@
  * [KASAN_SHADOW_OFFSET, KASAN_SHADOW_END) cover all 64-bits of virtual
  * addresses. So KASAN_SHADOW_OFFSET should satisfy the following equation:
  *      KASAN_SHADOW_OFFSET = KASAN_SHADOW_END -
- *                              (1ULL << (64 - KASAN_SHADOW_SCALE_SHIFT))
+ *                              (1ULL << (BITS_PER_LONG - KASAN_SHADOW_SCALE_SHIFT))
  */
 #define KASAN_SHADOW_SCALE_SHIFT	3
 
@@ -31,7 +31,11 @@
  * aligned on PGDIR_SIZE, so force its alignment to ease its population.
  */
 #define KASAN_SHADOW_START	((KASAN_SHADOW_END - KASAN_SHADOW_SIZE) & PGDIR_MASK)
+#if defined(CONFIG_64BIT) && (BITS_PER_LONG == 32)
+#define KASAN_SHADOW_END	0x90000000UL
+#else
 #define KASAN_SHADOW_END	MODULES_LOWEST_VADDR
+#endif
 
 #ifdef CONFIG_KASAN
 #define KASAN_SHADOW_OFFSET	_AC(CONFIG_KASAN_SHADOW_OFFSET, UL)
