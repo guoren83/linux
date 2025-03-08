@@ -25,7 +25,7 @@
 #define KERNEL_LINK_ADDR	(ADDRESS_SPACE_END - SZ_2G + 1)
 #elif BITS_PER_LONG == 32
 /* Leave 64MB for kernel and BPF at the end of the address space */
-#define KERNEL_LINK_ADDR	(PAGE_OFFSET - SZ_64M)
+#define KERNEL_LINK_ADDR	(PAGE_OFFSET - SZ_128M)
 #endif
 #else
 #define KERNEL_LINK_ADDR	PAGE_OFFSET
@@ -48,7 +48,7 @@
 
 #define VMALLOC_SIZE     (KERN_VIRT_SIZE >> 1)
 #ifdef CONFIG_ABI_RV64ILP32
-#define VMALLOC_END      KERNEL_LINK_ADDR
+#define VMALLOC_END      MODULES_LOWEST_VADDR
 #else
 #define VMALLOC_END      PAGE_OFFSET
 #endif
@@ -69,9 +69,15 @@
 #define MODULES_VADDR		(PFN_ALIGN((unsigned long)&_end) - SZ_2G)
 #define MODULES_END		(PFN_ALIGN((unsigned long)&_start))
 #else
+#ifdef CONFIG_64BIT
+#define MODULES_LOWEST_VADDR	(KERNEL_LINK_ADDR - SZ_64M)
+#define MODULES_VADDR		MODULES_LOWEST_VADDR
+#define MODULES_END		KERNEL_LINK_ADDR
+#else
 #define MODULES_LOWEST_VADDR	VMALLOC_START
 #define MODULES_VADDR		VMALLOC_START
 #define MODULES_END		VMALLOC_END
+#endif
 #endif
 
 /*
