@@ -68,7 +68,11 @@ EXPORT_SYMBOL(avenrun); /* should be removed */
  *
  * These values are estimates at best, so no need for locking.
  */
+#if defined(CONFIG_64BIT) && (BITS_PER_LONG == 32)
+void get_avenrun(unsigned long long *loads, unsigned long offset, int shift)
+#else
 void get_avenrun(unsigned long *loads, unsigned long offset, int shift)
+#endif
 {
 	loads[0] = (avenrun[0] + offset) << shift;
 	loads[1] = (avenrun[1] + offset) << shift;
