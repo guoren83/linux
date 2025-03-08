@@ -13,14 +13,18 @@
 
 static int loadavg_proc_show(struct seq_file *m, void *v)
 {
+#if defined(CONFIG_64BIT) && (BITS_PER_LONG == 32)
+	unsigned long long avnrun[3];
+#else
 	unsigned long avnrun[3];
+#endif
 
 	get_avenrun(avnrun, FIXED_1/200, 0);
 
 	seq_printf(m, "%lu.%02lu %lu.%02lu %lu.%02lu %u/%d %d\n",
-		LOAD_INT(avnrun[0]), LOAD_FRAC(avnrun[0]),
-		LOAD_INT(avnrun[1]), LOAD_FRAC(avnrun[1]),
-		LOAD_INT(avnrun[2]), LOAD_FRAC(avnrun[2]),
+		LOAD_INT((ulong)avnrun[0]), LOAD_FRAC((ulong)avnrun[0]),
+		LOAD_INT((ulong)avnrun[1]), LOAD_FRAC((ulong)avnrun[1]),
+		LOAD_INT((ulong)avnrun[2]), LOAD_FRAC((ulong)avnrun[2]),
 		nr_running(), nr_threads,
 		idr_get_cursor(&task_active_pid_ns(current)->idr) - 1);
 	return 0;
