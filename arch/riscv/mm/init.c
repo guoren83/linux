@@ -105,26 +105,26 @@ static void __init zone_sizes_init(void)
 
 static inline void print_mlk(char *name, unsigned long b, unsigned long t)
 {
-	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld kB)\n", name, b, t,
+	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld kB)\n", name, b, t - 1,
 		  (((t) - (b)) >> LOG2_SZ_1K));
 }
 
 static inline void print_mlm(char *name, unsigned long b, unsigned long t)
 {
-	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld MB)\n", name, b, t,
+	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld MB)\n", name, b, t - 1,
 		  (((t) - (b)) >> LOG2_SZ_1M));
 }
 
 static inline void print_mlg(char *name, unsigned long b, unsigned long t)
 {
-	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld GB)\n", name, b, t,
+	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld GB)\n", name, b, t - 1,
 		   (((t) - (b)) >> LOG2_SZ_1G));
 }
 
 #if BITS_PER_LONG == 64
 static inline void print_mlt(char *name, unsigned long b, unsigned long t)
 {
-	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld TB)\n", name, b, t,
+	pr_notice("%12s : 0x%08lx - 0x%08lx   (%4ld TB)\n", name, b, t - 1,
 		   (((t) - (b)) >> LOG2_SZ_1T));
 }
 #else
