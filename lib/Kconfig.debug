@@ -1613,6 +1613,7 @@ config CSD_LOCK_WAIT_DEBUG
 	depends on DEBUG_KERNEL
 	depends on SMP
 	depends on 64BIT
+	depends on !ABI_RV64ILP32
 	default n
 	help
 	  This option enables debug prints when CPUs are slow to respond
