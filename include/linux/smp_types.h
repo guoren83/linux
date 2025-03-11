@@ -61,7 +61,7 @@ struct __call_single_node {
 		unsigned int	u_flags;
 		atomic_t	a_flags;
 	};
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 	u16 src, dst;
 #endif
 };
