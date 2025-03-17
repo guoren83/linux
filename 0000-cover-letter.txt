@@ -1,0 +1,487 @@
+Build CONFIG_64BIT kernel-self with ILP32 ABI
+
+Since 2001, the CONFIG_64BIT kernel has been built with the LP64 ABI,
+but this patchset allows the CONFIG_64BIT kernel to use an ILP32 ABI
+for construction to reduce cache & memory footprint (Decreased about
+20% used memory in "free -h" under rv64ilp32 abi kernel v.s. lp64 abi
+kernel).
+
+Caution, this patchset doesn't introduce any new userspace ABI; only
+kernel-self!
+
+The patchset targets RISC-V and is built on the RV64ILP32 ABI, which
+was introduced into RISC-V's psABI in January 2025 [1]. This
+patchset equips an rv64ilp32 kernel with all the functionalities of
+a traditional 64-bit kernel, yet restricts the address space to 2GiB.
+So, the rv64ilp32 abi kernel supports lp64 and ilp32 (compat) abi
+userspace, which is the same as the traditional lp64 abi kernel.
+
+  +--------------------------------+
+  | +------------+---------------+ |
+  | |            |   (compat)    | |
+  | |  lp64-abi  |   ilp32 abi   | | User
+  | +------------+---------------+ |
+  +--------------------------------+-------
+  | +----------------------------+ |
+  | |  lp64 abi  / rv64ilp32 abi | | Kernel
+  | |              ^^^^^^^^^^^^^ | |
+  | +----------------------------+ |
+  +--------------------------------+-------
+  | +----------------------------+ |
+  | |  rv64gcbvh (RISC-V 64-bit) | | ISA
+  | +----------------------------+ |
+  +--------------------------------+
+
+This patchset is now in its third version. The major update is the shift
+to CONFIG_64BIT with u64lp64 & u32ilp32 abi support. The prior versions
+(v1, v2) are all based on CONFIG_32BIT and only support the u32ilp32
+abi.
+
+The innovation of v3 lies in supporting lp64-abi userspace rootfs by
+inheriting CONFIG_64BIT.
+
+
+Motivation
+==========
+Because all RISC-V RVA(B) Profiles are based on the 64-bit ISA, the market
+has experienced a significant rise in RISC-V 64-bit ISA SoCs or CPU cores
+for resource-constrained scenarios:
+
+ - allwinner/sun20i-d1-lichee
+ - allwinner/sun20i-d1s-mangopi
+ - canaan/k230d
+ - microchip/mpfs-beaglev-fire
+ - renesas/rzfive-smarc
+ - sophgo/cv1800b
+ - sophgo/cv1812h
+ - sophgo/sg2002
+
+The listed RV64 ISA-based SoCs with limited memory (less than 1GiB) can
+benefit from this patchset. The benefits are decreasing memory footprint
+and improving performance due to increased cache density.
+
+
+Demo Introduction
+=================
+To test this patchset, you need a toolchain. The rv64ilp32 ABI is integrated
+as a feature within the standard rv64 toolchain. We've provided an RV64
+multi-lib toolchain [2] that integrates QEMU & rootfs binaries for a quick
+start.
+
+After download:
+$ tar zxvf riscv64-elf-ubuntu-22.04-gcc-nightly-*-nightly.tar.gz
+$ cd riscv/qemu-linux
+ - Image_rv64ilp32		rv64ilp32 abi linux kernel
+ - Image_rv64lp64		lp64  abi linux kernel
+ - u64lp64_rootfs.ext2		lp64  abi user rootfs
+ - fw_dynamic.bin		opensbi firmware
+ - start-qemu-rv64.sh		qemu cmd script wrapper
+
+Quick start:
+$ ./start-qemu-rv64.sh Image_rv64ilp32 u64lp64_rootfs.ext2
+v.s.
+$ ./start-qemu-rv64.sh Image_rv64lp64  u64lp64_rootfs.ext2
+
+
+Used Memory Comparison
+======================
+Under the same configuration, the used memory decreased by 20% with the
+rv64ilp32 ABI kernel replacement (Qemu, firmware, and lp64 rootfs are
+the same, with their md5sums matching).
+
+./start-qemu-rv64.sh ../Image_rv64ilp32 ../rootfs.ext2.64lp64
+$ free -h
+       total  used   free  shared  buff/cache   available
+Mem:  105.4M  8.2M  93.9M   44.0K        3.3M       93.6M
+              ^^^^
+
+./start-qemu-rv64.sh ../Image_rv64lp64  ../rootfs.ext2.64lp64
+$ free -h
+       total  used   free  shared  buff/cache   available
+Mem:   89.3M 10.8M  74.8M   44.0K        3.7M       74.9M
+             ^^^^^
+
+$ cat start-qemu-rv64.sh
+exec qemu-system-riscv64 -cpu rv64 -M virt -m 128m -nographic -bios ../fw_dynamic.bin -kernel $1 -drive file=$2,format=raw,id=hd0 -device virtio-blk-device,drive=hd0 -append "rootwait root=/dev/vda ro console=ttyS0 earlycon=sbi norandmaps no5lvl no4lvl"
+
+
+User Virtual Memory Layout
+==========================
+Here is the comparison running user-abi-lp64 on kernel-abi-rv64ilp32
+and kernel-abi-lp64:
+
+(kernel-rv64ilp32-abi + user-abi-lp64)
+$ cat /proc/1/maps
+55555000-5560c000 r-xp 00000000 fe:00 17         /bin/busybox
+5560c000-5560f000 r--p 000b7000 fe:00 17         /bin/busybox
+5560f000-55610000 rw-p 000ba000 fe:00 17         /bin/busybox
+55610000-55631000 rw-p 00000000 00:00 0          [heap]
+77e69000-77e6b000 rw-p 00000000 00:00 0
+77e6b000-77fba000 r-xp 00000000 fe:00 140        /lib/libc.so.6
+77fba000-77fbd000 r--p 0014f000 fe:00 140        /lib/libc.so.6
+77fbd000-77fbf000 rw-p 00152000 fe:00 140        /lib/libc.so.6
+77fbf000-77fcb000 rw-p 00000000 00:00 0
+77fcb000-77fd5000 r-xp 00000000 fe:00 148        /lib/libresolv.so.2
+77fd5000-77fd6000 r--p 0000a000 fe:00 148        /lib/libresolv.so.2
+77fd6000-77fd7000 rw-p 0000b000 fe:00 148        /lib/libresolv.so.2
+77fd7000-77fd9000 rw-p 00000000 00:00 0
+77fd9000-77fdb000 r--p 00000000 00:00 0          [vvar]
+77fdb000-77fdc000 r-xp 00000000 00:00 0          [vdso]
+77fdc000-77ffc000 r-xp 00000000 fe:00 135        /lib/ld-linux-riscv64-lp64d.so.1
+77ffc000-77ffe000 r--p 0001f000 fe:00 135        /lib/ld-linux-riscv64-lp64d.so.1
+77ffe000-78000000 rw-p 00021000 fe:00 135        /lib/ld-linux-riscv64-lp64d.so.1
+7ffdf000-80000000 rw-p 00000000 00:00 0          [stack]
+
+(kernel-abi-lp64 + user-abi-lp64)
+$ cat /proc/1/maps
+2aaaaaa000-2aaab61000 r-xp 00000000 fe:00 17     /bin/busybox
+2aaab61000-2aaab64000 r--p 000b7000 fe:00 17     /bin/busybox
+2aaab64000-2aaab65000 rw-p 000ba000 fe:00 17     /bin/busybox
+2aaab65000-2aaab86000 rw-p 00000000 00:00 0      [heap]
+3ff7e69000-3ff7e6b000 rw-p 00000000 00:00 0
+3ff7e6b000-3ff7fba000 r-xp 00000000 fe:00 140    /lib/libc.so.6
+3ff7fba000-3ff7fbd000 r--p 0014f000 fe:00 140    /lib/libc.so.6
+3ff7fbd000-3ff7fbf000 rw-p 00152000 fe:00 140    /lib/libc.so.6
+3ff7fbf000-3ff7fcb000 rw-p 00000000 00:00 0
+3ff7fcb000-3ff7fd5000 r-xp 00000000 fe:00 148    /lib/libresolv.so.2
+3ff7fd5000-3ff7fd6000 r--p 0000a000 fe:00 148    /lib/libresolv.so.2
+3ff7fd6000-3ff7fd7000 rw-p 0000b000 fe:00 148    /lib/libresolv.so.2
+3ff7fd7000-3ff7fd9000 rw-p 00000000 00:00 0
+3ff7fd9000-3ff7fdb000 r--p 00000000 00:00 0      [vvar]
+3ff7fdb000-3ff7fdc000 r-xp 00000000 00:00 0      [vdso]
+3ff7fdc000-3ff7ffc000 r-xp 00000000 fe:00 135    /lib/ld-linux-riscv64-lp64d.so.1
+3ff7ffc000-3ff7ffe000 r--p 0001f000 fe:00 135    /lib/ld-linux-riscv64-lp64d.so.1
+3ff7ffe000-3ff8000000 rw-p 00021000 fe:00 135    /lib/ld-linux-riscv64-lp64d.so.1
+3ffffdf000-4000000000 rw-p 00000000 00:00 0      [stack]
+
+~~~~~~~~~~~~~~~~~~~~~~
+For the user-abi-ilp32, the virtual memory layouts are the same:
+(kernel-abi-lp64/rv64ilp32 + user-abi-ilp32)
+$ cat /proc/1/maps
+55555000-55637000 r-xp 00000000 fe:00 17         /bin/busybox
+55637000-55639000 r--p 000e1000 fe:00 17         /bin/busybox
+55639000-5563a000 rw-p 000e3000 fe:00 17         /bin/busybox
+5563a000-5565c000 rw-p 00000000 00:00 0          [heap]
+77e63000-77fbe000 r-xp 00000000 fe:00 145        /lib/libc.so.6
+77fbe000-77fc0000 r--p 0015a000 fe:00 145        /lib/libc.so.6
+77fc0000-77fc1000 rw-p 0015c000 fe:00 145        /lib/libc.so.6
+77fc1000-77fcb000 rw-p 00000000 00:00 0
+77fcb000-77fd5000 r-xp 00000000 fe:00 154        /lib/libresolv.so.2
+77fd5000-77fd6000 r--p 0000a000 fe:00 154        /lib/libresolv.so.2
+77fd6000-77fd7000 rw-p 0000b000 fe:00 154        /lib/libresolv.so.2
+77fd7000-77fd9000 rw-p 00000000 00:00 0
+77fd9000-77fdb000 r--p 00000000 00:00 0          [vvar]
+77fdb000-77fdc000 r-xp 00000000 00:00 0          [vdso]
+77fdc000-77ffe000 r-xp 00000000 fe:00 138        /lib/ld-linux-riscv32-ilp32d.so.1
+77ffe000-77fff000 r--p 00022000 fe:00 138        /lib/ld-linux-riscv32-ilp32d.so.1
+77fff000-78000000 rw-p 00023000 fe:00 138        /lib/ld-linux-riscv32-ilp32d.so.1
+7ffdf000-80000000 rw-p 00000000 00:00 0          [stack]
+
+
+Kernel Virtual Memory Layout
+============================
+Here is the comparison on kernel-abi-rv64ilp32 and kernel-abi-lp64:
+
+Virtual kernel memory layout (kernel-abi-rv64ilp32):
+   fixmap : 0x94a00000 - 0x94ffffff   (6144 kB)
+   pci io : 0x95000000 - 0x95ffffff   (  16 MB)
+  vmemmap : 0x96000000 - 0x97ffffff   (  32 MB)
+  vmalloc : 0x98000000 - 0xb7ffffff   ( 512 MB)
+  modules : 0xb8000000 - 0xbbffffff   (  64 MB)
+   lowmem : 0xc0000000 - 0xc7ffffff   ( 128 MB)
+    kasan : 0x80000000 - 0x8fffffff   ( 256 MB)
+   kernel : 0xbc000000 - 0xbfffffff   (  64 MB)
+
+Virtual kernel memory layout (kernel-abi-lp64):
+   fixmap : 0xffffffc4fea00000 - 0xffffffc4feffffff   (6144 kB)
+   pci io : 0xffffffc4ff000000 - 0xffffffc4ffffffff   (  16 MB)
+  vmemmap : 0xffffffc500000000 - 0xffffffc5ffffffff   (4096 MB)
+  vmalloc : 0xffffffc600000000 - 0xffffffd5ffffffff   (  64 GB)
+  modules : 0xffffffff01591000 - 0xffffffff7fffffff   (2026 MB)
+   lowmem : 0xffffffd600000000 - 0xffffffd607ffffff   ( 128 MB)
+    kasan : 0xfffffff700000000 - 0xfffffffeffffffff   (  32 GB)
+   kernel : 0xffffffff80000000 - 0xfffffffffffffffe   (2047 MB)
+
+
+Memory Info Comparison
+======================
+
+./start-qemu-rv64.sh ../Image_rv64ilp32 ../rootfs.ext2.64lp64
+$ cat /proc/meminfo
+MemTotal:         107916 kB
+MemFree:           96200 kB
+MemAvailable:      95932 kB
+Buffers:             448 kB
+Cached:             2268 kB
+SwapCached:            0 kB
+Active:             2432 kB
+Inactive:            832 kB
+Active(anon):         44 kB
+Inactive(anon):      548 kB
+Active(file):       2388 kB
+Inactive(file):      284 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:               108 kB
+Writeback:             0 kB
+AnonPages:           648 kB
+Mapped:             1672 kB
+Shmem:                44 kB
+KReclaimable:        688 kB
+Slab:               4996 kB
+SReclaimable:        688 kB
+SUnreclaim:         4308 kB
+KernelStack:         768 kB
+PageTables:          164 kB
+SecPageTables:         0 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:       53956 kB
+Committed_AS:       2240 kB
+VmallocTotal:     524288 kB
+VmallocUsed:         924 kB
+VmallocChunk:          0 kB
+Percpu:               76 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+
+./start-qemu-rv64.sh ../Image_rv64lp64  ../rootfs.ext2.64lp64
+$ cat /proc/meminfo
+MemTotal:          91428 kB
+MemFree:           77048 kB
+MemAvailable:      77172 kB
+Buffers:             448 kB
+Cached:             2268 kB
+SwapCached:            0 kB
+Active:             2492 kB
+Inactive:            768 kB
+Active(anon):         48 kB
+Inactive(anon):      540 kB
+Active(file):       2444 kB
+Inactive(file):      228 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:             0 kB
+SwapFree:              0 kB
+Dirty:                32 kB
+Writeback:             0 kB
+AnonPages:           648 kB
+Mapped:             1768 kB
+Shmem:                44 kB
+KReclaimable:       1140 kB
+Slab:               7220 kB
+SReclaimable:       1140 kB
+SUnreclaim:         6080 kB
+KernelStack:         768 kB
+PageTables:          408 kB
+SecPageTables:         0 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:       45712 kB
+Committed_AS:       2240 kB
+VmallocTotal:   67108864 kB
+VmallocUsed:         864 kB
+VmallocChunk:          0 kB
+Percpu:               88 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+
+CPU Info Comparison
+===================
+After disabling sv48 and sv57, there is no difference in the "/proc/cpuinfo".
+
+./start-qemu-rv64.sh ../Image_rv64ilp32 ../rootfs.ext2.64lp64
+$ cat /proc/cpuinfo
+processor       : 0
+hart            : 0
+isa             : rv64imafdch_zicbom_zicboz_zicntr_zicsr_zifencei_zihintpause_zihpm_zawrs_zfa_zca_zcd_zba_zbb_zbc_zbs_sstc_svadu
+mmu             : sv39
+mvendorid       : 0x0
+marchid         : 0x0
+mimpid          : 0x0
+hart isa        : rv64imafdch_zicbom_zicboz_zicntr_zicsr_zifencei_zihintpause_zihpm_zawrs_zfa_zca_zcd_zba_zbb_zbc_zbs_sstc_svadu
+
+./start-qemu-rv64.sh ../Image_rv64lp64  ../rootfs.ext2.64lp64
+$ cat /proc/cpuinfo
+processor       : 0
+hart            : 0
+isa             : rv64imafdch_zicbom_zicboz_zicntr_zicsr_zifencei_zihintpause_zihpm_zawrs_zfa_zca_zcd_zba_zbb_zbc_zbs_sstc_svadu
+mmu             : sv39
+mvendorid       : 0x0
+marchid         : 0x0
+mimpid          : 0x0
+hart isa        : rv64imafdch_zicbom_zicboz_zicntr_zicsr_zifencei_zihintpause_zihpm_zawrs_zfa_zca_zcd_zba_zbb_zbc_zbs_sstc_svadu
+
+
+.config Difference
+==================
+The patchset adds CONFIG_ABI_RV64ILP32 to Kconfig, switching the
+compile options from "-mabi=lp64 -melf64lriscv" to
+"-mabi=ilp32 -melf32lriscv" depending on CONFIG_64BIT. So, The
+differences of Kconfig between with and without ABI_RV64ILP32
+are rare:
+
+ - CONFIG_PAGE_OFFSET		0xc0000000.
+ - CONFIG_ILLEGAL_POINTER_VALUE	0x0.
+ - CONFIG_ABI_RV64ILP32: 	Compile option depends on CONFIG_64BIT.
+ - CONFIG_HAVE_CMPXCHG_DOUBLE:	The rv64ilp32 kernel offers new feature.
+ - CONFIG_ZONE_DMA32:		It's unnecessary for rv64ilp32 kernel.
+ - CONFIG_CSD_LOCK_WAIT_DEBUG	Because of BITS_PER_LONG = 32, rv64ilp32
+				doesn't support.
+
+$ diff ../build-rv64lp64/.config ../build-rv64ilp32/.config
+296c296
+< CONFIG_PAGE_OFFSET=0xff60000000000000
+---
+> CONFIG_PAGE_OFFSET=0xc0000000
+308c308
+< CONFIG_ILLEGAL_POINTER_VALUE=0xdead000000000000
+---
+> CONFIG_ILLEGAL_POINTER_VALUE=0
+352c352
+< # CONFIG_ABI_RV64ILP32 is not set
+---
+> CONFIG_ABI_RV64ILP32=y
+609a610
+> CONFIG_HAVE_CMPXCHG_DOUBLE=y
+837d837
+< CONFIG_ZONE_DMA32=y
+7240d7239
+< # CONFIG_CSD_LOCK_WAIT_DEBUG is not set
+
+Use "zcat /proc/config.gz" to get the .config file in our qemu demo.
+
+
+Dmesg Difference
+================
+
+$ diff rv64lp64.log rv64ilp32.log
+1c1
+< Linux version 6.14.0-rc1-00041-g804ac3b4d679 (ren.guo@ea134-sw12.eng.xrvm.cn) (riscv64-unknown-elf-gcc (gf9ffd92f861-dirty) 13.2.0, GNU ld (GNU Binutils) 2.42) #1 SMP Sat Mar 15 11:57:20 CST 2025
+---
+> Linux version 6.14.0-rc1-00041-g804ac3b4d679 (ren.guo@ea134-sw12.eng.xrvm.cn) (riscv64-unknown-elf-gcc (gf9ffd92f861-dirty) 13.2.0, GNU ld (GNU Binutils) 2.42) #1 SMP Sat Mar 15 11:55:33 CST 2025
+13,14d12
+< Disabled 5-level paging
+< Disabled 4-level and 5-level paging
+19,20c17
+<   DMA32    [mem 0x0000000060000000-0x0000000067ffffff]
+<   Normal   empty
+---
+>   Normal   [mem 0x0000000060000000-0x0000000067ffffff]
+31c28
+< percpu: Embedded 22 pages/cpu s49384 r8192 d32536 u90112
+---
+> percpu: Embedded 16 pages/cpu s34264 r8192 d23080 u65536
+33,35c30,33
+< printk: log buffer data + meta data: 131072 + 458752 = 589824 bytes
+< Dentry cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+< Inode-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+---
+> Unknown kernel command line parameters "no5lvl no4lvl", will be passed to user space.
+> printk: log buffer data + meta data: 131072 + 409600 = 540672 bytes
+> Dentry cache hash table entries: 16384 (order: 4, 65536 bytes, linear)
+> Inode-cache hash table entries: 8192 (order: 3, 32768 bytes, linear)
+40c38
+< software IO TLB: mapped [mem 0x0000000067f6b000-0x0000000067fab000] (0MB)
+---
+> software IO TLB: mapped [mem 0x0000000067f8e000-0x0000000067fce000] (0MB)
+42,48c40,46
+<       fixmap : 0xffffffc4fea00000 - 0xffffffc4feffffff   (6144 kB)
+<       pci io : 0xffffffc4ff000000 - 0xffffffc4ffffffff   (  16 MB)
+<      vmemmap : 0xffffffc500000000 - 0xffffffc5ffffffff   (4096 MB)
+<      vmalloc : 0xffffffc600000000 - 0xffffffd5ffffffff   (  64 GB)
+<      modules : 0xffffffff0158d000 - 0xffffffff7fffffff   (2026 MB)
+<       lowmem : 0xffffffd600000000 - 0xffffffd607ffffff   ( 128 MB)
+<       kernel : 0xffffffff80000000 - 0xfffffffffffffffe   (2047 MB)
+---
+>       fixmap : 0x94a00000 - 0x94ffffff   (6144 kB)
+>       pci io : 0x95000000 - 0x95ffffff   (  16 MB)
+>      vmemmap : 0x96000000 - 0x97ffffff   (  32 MB)
+>      vmalloc : 0x98000000 - 0xb7ffffff   ( 512 MB)
+>      modules : 0xb8000000 - 0xbbffffff   (  64 MB)
+>       lowmem : 0xc0000000 - 0xc7ffffff   ( 128 MB)
+>       kernel : 0xbc000000 - 0xbfffffff   (  64 MB)
+68,69c66,67
+< Mount-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+< Mountpoint-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+---
+> Mount-cache hash table entries: 1024 (order: 0, 4096 bytes, linear)
+> Mountpoint-cache hash table entries: 1024 (order: 0, 4096 bytes, linear)
+77c75
+< Memory: 87584K/131072K available (9731K kernel code, 4933K rwdata, 4096K rodata, 2307K init, 484K bss, 41948K reserved, 0K cma-reserved)
+---
+> Memory: 104768K/131072K available (10043K kernel code, 4722K rwdata, 4096K rodata, 2265K init, 371K bss, 25420K reserved, 0K cma-reserved)
+85d82
+< DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+88c85
+< audit: type=2000 audit(0.104:1): state=initialized audit_enabled=0 res=1
+---
+> audit: type=2000 audit(0.152:1): state=initialized audit_enabled=0 res=1
+92c89
+< HugeTLB: 28 KiB vmemmap can be freed for a 2.00 MiB page
+---
+> HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+106c103
+< tcp_listen_portaddr_hash hash table entries: 128 (order: 0, 4096 bytes, linear)
+---
+> tcp_listen_portaddr_hash hash table entries: 256 (order: 0, 5120 bytes, linear)
+108,109c105,106
+< TCP established hash table entries: 1024 (order: 1, 8192 bytes, linear)
+< TCP bind hash table entries: 1024 (order: 4, 65536 bytes, linear)
+---
+> TCP established hash table entries: 1024 (order: 0, 4096 bytes, linear)
+> TCP bind hash table entries: 1024 (order: 3, 40960 bytes, linear)
+111,112c108,109
+< UDP hash table entries: 256 (order: 3, 40960 bytes, linear)
+< UDP-Lite hash table entries: 256 (order: 3, 40960 bytes, linear)
+---
+> UDP hash table entries: 256 (order: 2, 20480 bytes, linear)
+> UDP-Lite hash table entries: 256 (order: 2, 20480 bytes, linear)
+120c117
+< workingset: timestamp_bits=46 max_order=15 bucket_order=0
+---
+> workingset: timestamp_bits=14 max_order=15 bucket_order=1
+165c162
+< goldfish_rtc 101000.rtc: setting system clock to 2025-03-15T08:48:58 UTC (1742028538)
+---
+> goldfish_rtc 101000.rtc: setting system clock to 2025-03-15T08:51:36 UTC (1742028696)
+191c188
+< Freeing unused kernel image (initmem) memory: 2304K
+---
+> Freeing unused kernel image (initmem) memory: 2264K
+
+
+References
+==========
+[1] https://github.com/riscv-non-isa/riscv-elf-psabi-doc/pull/381
+[2] https://github.com/ruyisdk/riscv-gnu-toolchain-rv64ilp32/releases/tag/2025.01.16
+
+
+Changelog
+=========
+V3:
+ - Change from CONFIG_32BIT to CONFIG_64BIT
+ - Add u64lp64 support
+ - Remove u64ilp32 support
+ - Rebase v6.14-rc1
+
+V2:
+https://lore.kernel.org/linux-riscv/20231112061514.2306187-1-guoren@kernel.org/
+ - Add u64ilp32 support
+ - Rebase v6.5-rc1
+ - Enable 64ilp32 vgettimeofday for benchmarking
+
+V1:
+https://lore.kernel.org/linux-riscv/20230518131013.3366406-1-guoren@kernel.org/
