@@ -170,6 +170,118 @@ secondary_start_sbi:
 
 .align 2
 .Lsecondary_park:
+#ifdef CONFIG_ABI_RV64ILP32
+.option push
+.option norelax
+.option norvc
+	addiw sp, sp, -32
+
+	/* zext.w sp */
+	slli  sp, sp, 32
+	srli  sp, sp, 32
+
+	/* zext.w ra */
+	slli ra, ra, 32
+	srli ra, ra, 32
+
+	/* zext.w fp */
+	slli fp, fp, 32
+	srli fp, fp, 32
+
+	/* zext.w tp */
+	slli tp, tp, 32
+	srli tp, tp, 32
+
+	/* save tmp reg */
+	REG_S ra, 24(sp)
+	REG_S fp, 16(sp)
+	REG_S tp,  8(sp)
+	REG_S gp,  0(sp)
+
+	/* zext.w epc */
+	csrr ra, CSR_EPC
+	slli ra, ra, 32
+	srli ra, ra, 32
+	csrw CSR_SEPC, ra
+
+	csrr gp, CSR_CAUSE
+
+	/* EXC_INST_ACCESS */
+	addiw fp, gp, -1
+	beqz fp, 6f
+
+	/* EXC_LOAD_ACCESS */
+	addiw fp, gp, -5
+	beqz fp, 1f
+
+	/* EXC_STORE_ACCESS */
+	addiw fp, gp, -7
+	beqz fp, 1f
+
+	j 7f
+1:
+	/* get inst */
+	lw ra, 0(ra)
+	andi gp, ra, 0x3
+
+	/* c.(lw/sw/ld/sd)sp */
+	addiw fp, gp, -2
+	beqz fp, 6f
+
+	/* lw/sw/ld/sd */
+	addiw fp, gp, -3
+	beqz fp, 2f
+
+	/* c.(lw/sw/ld/sd) */
+	li fp, 0x7
+	slli fp, fp, 7
+	and ra, fp, ra
+	slli ra, ra, 8
+	j 3f
+
+2:
+	/* get rs1 */
+	li fp, 0x1f
+	slli fp, fp, 15
+	and ra, fp, ra
+
+3:
+	/* copy rs1 to rd */
+	mv fp, ra
+	srli fp, fp, 8
+	or ra, fp, ra
+
+	/* modify slli */
+	la fp, 4f
+	lw tp, 0(fp)
+	mv gp, tp
+	or tp, ra, tp
+	sw tp, 0(fp)
+	fence.i
+4:	slli x0, x0, 32
+	sw gp, 0(fp)
+
+	/* modify srli */
+	la fp, 5f
+	lw tp, 0(fp)
+	mv gp, tp
+	or tp, ra, tp
+	sw tp, 0(fp)
+	fence.i
+5:	srli x0, x0, 32
+	sw gp, 0(fp)
+
+6:
+	/* restore tmp reg */
+	REG_L ra, 24(sp)
+	REG_L fp, 16(sp)
+	REG_L tp,  8(sp)
+	REG_L gp,  0(sp)
+	addi sp, sp, 32
+	sret
+.option pop
+7:
+#endif
 	/*
 	 * Park this hart if we:
 	 *  - have too many harts on CONFIG_RISCV_BOOT_SPINWAIT
