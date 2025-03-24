@@ -22,17 +22,17 @@ __sum16 csum_ipv6_magic(const struct in6_addr *saddr,
 			__u32 len, __u8 proto, __wsum csum)
 {
 	unsigned int ulen, uproto;
-	unsigned long sum = (__force unsigned long)csum;
+	xlen_t sum = (__force xlen_t)csum;
 
-	sum += (__force unsigned long)saddr->s6_addr32[0];
-	sum += (__force unsigned long)saddr->s6_addr32[1];
-	sum += (__force unsigned long)saddr->s6_addr32[2];
-	sum += (__force unsigned long)saddr->s6_addr32[3];
+	sum += (__force xlen_t)saddr->s6_addr32[0];
+	sum += (__force xlen_t)saddr->s6_addr32[1];
+	sum += (__force xlen_t)saddr->s6_addr32[2];
+	sum += (__force xlen_t)saddr->s6_addr32[3];
 
-	sum += (__force unsigned long)daddr->s6_addr32[0];
-	sum += (__force unsigned long)daddr->s6_addr32[1];
-	sum += (__force unsigned long)daddr->s6_addr32[2];
-	sum += (__force unsigned long)daddr->s6_addr32[3];
+	sum += (__force xlen_t)daddr->s6_addr32[0];
+	sum += (__force xlen_t)daddr->s6_addr32[1];
+	sum += (__force xlen_t)daddr->s6_addr32[2];
+	sum += (__force xlen_t)daddr->s6_addr32[3];
 
 	ulen = (__force unsigned int)htonl((unsigned int)len);
 	sum += ulen;
@@ -46,7 +46,7 @@ __sum16 csum_ipv6_magic(const struct in6_addr *saddr,
 	 */
 	if (IS_ENABLED(CONFIG_RISCV_ISA_ZBB) &&
 	    IS_ENABLED(CONFIG_RISCV_ALTERNATIVE)) {
-		unsigned long fold_temp;
+		xlen_t fold_temp;
 
 		/*
 		 * Zbb is likely available when the kernel is compiled with Zbb
@@ -85,12 +85,12 @@ EXPORT_SYMBOL(csum_ipv6_magic);
 #define OFFSET_MASK 7
 #endif
 
-static inline __no_sanitize_address unsigned long
-do_csum_common(const unsigned long *ptr, const unsigned long *end,
-	       unsigned long data)
+static inline __no_sanitize_address xlen_t
+do_csum_common(const xlen_t *ptr, const xlen_t *end,
+	       xlen_t data)
 {
 	unsigned int shift;
-	unsigned long csum = 0, carry = 0;
+	xlen_t csum = 0, carry = 0;
 
 	/*
 	 * Do 32-bit reads on RV32 and 64-bit reads otherwise. This should be
@@ -130,8 +130,8 @@ static inline __no_sanitize_address unsigned int
 do_csum_with_alignment(const unsigned char *buff, int len)
 {
 	unsigned int offset, shift;
-	unsigned long csum, data;
-	const unsigned long *ptr, *end;
+	xlen_t csum, data;
+	const xlen_t *ptr, *end;
 
 	/*
 	 * Align address to closest word (double word on rv64) that comes before
@@ -140,7 +140,7 @@ do_csum_with_alignment(const unsigned char *buff, int len)
 	 */
 	offset = (unsigned long)buff & OFFSET_MASK;
 	kasan_check_read(buff, len);
-	ptr = (const unsigned long *)(buff - offset);
+	ptr = (const xlen_t *)(buff - offset);
 
 	/*
 	 * Clear the most significant bytes that were over-read if buff was not
@@ -153,7 +153,7 @@ do_csum_with_alignment(const unsigned char *buff, int len)
 #else
 	data = (data << shift) >> shift;
 #endif
-	end = (const unsigned long *)(buff + len);
+	end = (const xlen_t *)(buff + len);
 	csum = do_csum_common(ptr, end, data);
 
 #ifdef CC_HAS_ASM_GOTO_TIED_OUTPUT
@@ -163,7 +163,7 @@ do_csum_with_alignment(const unsigned char *buff, int len)
 	 */
 	if (IS_ENABLED(CONFIG_RISCV_ISA_ZBB) &&
 	    IS_ENABLED(CONFIG_RISCV_ALTERNATIVE)) {
-		unsigned long fold_temp;
+		xlen_t fold_temp;
 
 		/*
 		 * Zbb is likely available when the kernel is compiled with Zbb
@@ -233,15 +233,15 @@ no_zbb:
 static inline __no_sanitize_address unsigned int
 do_csum_no_alignment(const unsigned char *buff, int len)
 {
-	unsigned long csum, data;
-	const unsigned long *ptr, *end;
+	xlen_t csum, data;
+	const xlen_t *ptr, *end;
 
-	ptr = (const unsigned long *)(buff);
+	ptr = (const xlen_t *)(buff);
 	data = *(ptr++);
 
 	kasan_check_read(buff, len);
 
-	end = (const unsigned long *)(buff + len);
+	end = (const xlen_t *)(buff + len);
 	csum = do_csum_common(ptr, end, data);
 
 	/*
@@ -250,7 +250,7 @@ do_csum_no_alignment(const unsigned char *buff, int len)
 	 */
 	if (IS_ENABLED(CONFIG_RISCV_ISA_ZBB) &&
 	    IS_ENABLED(CONFIG_RISCV_ALTERNATIVE)) {
-		unsigned long fold_temp;
+		xlen_t fold_temp;
 
 		/*
 		 * Zbb is likely available when the kernel is compiled with Zbb
