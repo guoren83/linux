@@ -2,28 +2,29 @@ rv64ilp32_abi: Build CONFIG_64BIT kernel-self with ILP32 ABI
 
 Since 2001, the CONFIG_64BIT kernel has been built with the LP64 ABI,
 but this patchset allows the CONFIG_64BIT kernel to use an ILP32 ABI
-for construction to reduce cache & memory footprint (Decreased about
-20% used memory in "free -h" for kernel-abi-rv64ilp32 v.s.
-kernel-abi-lp64 comparison in our demo).
+for construction to reduce cache & memory footprint (Compared to
+kernel-lp64-abi, kernel-rv64ilp32-abi decreased the used memory by
+about 20%, as shown in "free -h" in the following demo.)
 
-Caution, this patchset doesn't introduce any new userspace ABI (only
-kernel-self).
+Caution: this patchset doesn't introduce any new userspace ABI; it's
+only for the kernel-self.
 
 The patchset targets RISC-V and is built on the RV64ILP32 ABI, which
 was introduced into RISC-V's psABI in January 2025 [1]. This patchset
-equips an abi-rv64ilp32 kernel with all the functionalities of a
-traditional abi-lp64 kernel, yet restricts the address space to 2GiB.
-So, the kernel-abi-rv64ilp32 supports user-abi-lp64 and user-abi-ilp32
-(compat), which is the same as the traditional kernel-abi-lp64.
+equips an rv64ilp32-abi kernel with all the functionalities of a
+traditional lp64-abi kernel, yet restricts the address space to 2GiB.
+Hence, the rv64ilp32-abi kernel simultaneously supports lp64-abi
+userspace and ilp32-abi (compat) userspace, the same as the
+traditional lp64-abi kernel.
 
   +--------------------------------+
   | +------------+---------------+ |
   | |            |   (compat)    | |
-  | |  abi-lp64  |   abi-ilp32   | | User
+  | |  lp64-abi  |   ilp32-abi   | | User
   | +------------+---------------+ |
   +--------------------------------+-------
   | +----------------------------+ |
-  | |  abi-rv64ilp32 / abi-lp64  | | Kernel
+  | |  rv64ilp32-abi / lp64-abi  | | Kernel
   | |  ^^^^^^^^^^^^^             | |
   | +----------------------------+ |
   +--------------------------------+-------
@@ -32,22 +33,34 @@ So, the kernel-abi-rv64ilp32 supports user-abi-lp64 and user-abi-ilp32
   | +----------------------------+ |
   +--------------------------------+
 
+Caution: The rv64ilp32-abi and lp64-abi kernels are equivalent and
+can be used interchangeably. The only difference is that the
+rv64ilp32-abi kernel restricts kernel and user space to separate 
+2GiB address spaces.
+
+Patchset Organization
+=====================
 This patchset is now in its third version. The major update is the
-shift to CONFIG_64BIT with user abi-lp64 & abi-ilp32 support. The prior
+shift to CONFIG_64BIT with user lp64-abi & ilp32-abi support. The prior
 versions (v1, v2) are all based on CONFIG_32BIT and only support the
-user-abi-ilp32. The innovation of v3 lies in supporting abi-lp64
-userspace rootfs by inheriting CONFIG_64BIT.
+user ilp32-abi.
 
-This set contains 43 patches, impacting over 20 subsystems with sparse
-modifications.
+The innovation of v3 lies in supporting user lp64-abi by inheriting
+CONFIG_64BIT.
 
- - PATCH[1]    : The kernel-abi-rv64ilp32 reuse kernel-abi-lp64 uapi.
+This patchset comprises 43 patches affecting more than 20 subsystems.
+Most modifications are about ensuring the correct usage of
+BITS_PER_LONG and CONFIG_64BIT. Part of the Linux code doesn't care
+about that because BITS_PER_LONG and CONFIG_64BIT were the same before.
+
+ - PATCH[1]    : The rv64ilp32-abi kernel reuses lp64-abi uapi.
  - PATCH[2~17] : The riscv subsystem-related modifications.
  - PATCH[18~43]: Other subsystem-related modifications.
 
-The first patch needs review help, titled "rv64ilp32_abi: uapi: Reuse
-lp64 ABI interface." How to define unified UAPI headers?
-
+The first patch needs discussion and is titled "uapi: Reuse lp64 ABI
+interface." How do we define a unified set of uapi header files that
+could be utilized for the lp64-abi kernel and the rv64ilp32-abi
+kernel?
 
 Motivation
 ==========
@@ -74,43 +87,45 @@ patchset. Try our quick demo materials:
 
 Demo Introduction
 =================
-To test this patchset, you need a toolchain. The abi-rv64ilp32 is integrated
-as a -mabi=ilp32 feature within the standard rv64 toolchain. We've provided
-a multi-lib riscv64-elf-toolchain [2] that integrates QEMU & rootfs binaries
-for a quick start.
+To test the patchset, use a riscv64 toolchain with rv64ilp32-abi
+support. The rv64ilp32-abi is integrated as a -mabi=ilp32 feature within
+the standard rv64 toolchain. We've built a multi-lib riscv64-elf-toolchain
+[2] containing rv64ilp32-abi. We also provide the pre-compiled demo
+materials for a quick start, such as qemu, kernel, and rootfs binaries for
+the demo.
 
-After download:
-$ tar zxvf riscv64-elf-ubuntu-22.04-gcc-nightly-*.tar.gz
+After download from [2]:
+$ tar zxvf riscv64-elf-ubuntu-20(2).04-gcc-nightly-2025.03.24-nightly.tar.gz
 $ cd riscv/qemu-linux
- - Image_rv64ilp32		rv64ilp32 abi linux kernel
- - Image_rv64lp64		lp64  abi linux kernel
- - u64lp64_rootfs.ext2		lp64  abi user rootfs
- - start-qemu-rv64.sh		qemu cmd script wrapper
+ - Image_rv64ilp32		rv64ilp32-abi kernel
+ - Image_rv64lp64		lp64-abi kernel
+ - u64lp64_rootfs.ext2		lp64-abi userspace rootfs
+ - start-qemu-rv64.sh		qemu running wrapper script
+
+Compile Image_rv64ilp32:
+$ make ARCH=riscv CROSS_COMPILE=<download path>/riscv/bin/riscv64-unknown-elf- rv64ilp32_defconfig all
+
+Compile Image_rv64lp64:
+$ make ARCH=riscv CROSS_COMPILE=<download path>/riscv/bin/riscv64-unknown-elf- defconfig all
 
 Quick Start:
 $ ./start-qemu-rv64.sh Image_rv64ilp32 u64lp64_rootfs.ext2
 v.s.
 $ ./start-qemu-rv64.sh Image_rv64lp64  u64lp64_rootfs.ext2
 
-Compile Image_rv64ilp32:
-$ make ARCH=riscv CROSS_COMPILE=<your path>/riscv/bin/riscv64-unknown-elf- rv64ilp32_defconfig all
-
-Compile Image_rv64lp64:
-$ make ARCH=riscv CROSS_COMPILE=<your path>/riscv/bin/riscv64-unknown-elf- defconfig all
-
 Used Memory Comparison
 ======================
-Under the same configuration, the used memory decreased by 20% with the
-Image_rv64ilp32 replacement (Qemu, firmware, and lp64 rootfs are the
-same, with their md5sums matching).
+Under the same configuration, the used memory decreased by 20% (10.8 ->
+8.2) with the Image_rv64ilp32 replacement (Qemu, firmware, and lp64-abi
+user rootfs are the same).
 
-./start-qemu-rv64.sh ../Image_rv64ilp32 ../rootfs.ext2.64lp64
+$ ./start-qemu-rv64.sh Image_rv64ilp32 rootfs.ext2.64lp64
 $ free -h
        total  used   free  shared  buff/cache   available
 Mem:  105.4M  8.2M  93.9M   44.0K        3.3M       93.6M
               ^^^^
 
-./start-qemu-rv64.sh ../Image_rv64lp64  ../rootfs.ext2.64lp64
+$ ./start-qemu-rv64.sh Image_rv64lp64  rootfs.ext2.64lp64
 $ free -h
        total  used   free  shared  buff/cache   available
 Mem:   89.3M 10.8M  74.8M   44.0K        3.7M       74.9M
@@ -122,10 +137,10 @@ exec qemu-system-riscv64 -cpu rv64 -M virt -m 128m -nographic -kernel $1 -drive 
 
 User Virtual Memory Layout
 ==========================
-Here is the comparison running user-abi-lp64 on kernel-abi-rv64ilp32
-and kernel-abi-lp64:
+Here is the comparison running lp64-abi userspace rootfs on
+rv64ilp32-abi kernel and lp64-abi kernel:
 
-(kernel-abi-rv64ilp32 + user-abi-lp64)
+(rv64ilp32-abi-kernel + lp64-abi-user-rootfs)
 $ cat /proc/1/maps
 55555000-5560c000 r-xp 00000000 fe:00 17         /bin/busybox
 5560c000-5560f000 r--p 000b7000 fe:00 17         /bin/busybox
@@ -147,7 +162,7 @@ $ cat /proc/1/maps
 77ffe000-78000000 rw-p 00021000 fe:00 135        /lib/ld-linux-riscv64-lp64d.so.1
 7ffdf000-80000000 rw-p 00000000 00:00 0          [stack]
 
-(kernel-abi-lp64 + user-abi-lp64)
+(lp64-abi-kernel + lp64-abi-user-rootfs)
 $ cat /proc/1/maps
 2aaaaaa000-2aaab61000 r-xp 00000000 fe:00 17     /bin/busybox
 2aaab61000-2aaab64000 r--p 000b7000 fe:00 17     /bin/busybox
@@ -170,8 +185,9 @@ $ cat /proc/1/maps
 3ffffdf000-4000000000 rw-p 00000000 00:00 0      [stack]
 
 ~~~~~~~~~~~~~~~~~~~~~~
-For the user-abi-ilp32, the virtual memory layouts are the same:
-(kernel-abi-lp64/rv64ilp32 + user-abi-ilp32)
+For the ilp32-abi userspace rootfs, the virtual memory layouts
+are the same:
+(lp64-abi-kernel/rv64ilp32-abi-kernel + ilp32-abi-user-rootfs)
 $ cat /proc/1/maps
 55555000-55637000 r-xp 00000000 fe:00 17         /bin/busybox
 55637000-55639000 r--p 000e1000 fe:00 17         /bin/busybox
@@ -195,9 +211,9 @@ $ cat /proc/1/maps
 
 Kernel Virtual Memory Layout
 ============================
-Here is the comparison on kernel-abi-rv64ilp32 and kernel-abi-lp64:
+Here is the comparison on rv64ilp32-abi-kernel and lp64-abi-kernel:
 
-Virtual kernel memory layout (kernel-abi-rv64ilp32):
+Virtual kernel memory layout (rv64ilp32-abi-kernel):
    fixmap : 0x94a00000 - 0x94ffffff   (6144 kB)
    pci io : 0x95000000 - 0x95ffffff   (  16 MB)
   vmemmap : 0x96000000 - 0x97ffffff   (  32 MB)
@@ -207,7 +223,7 @@ Virtual kernel memory layout (kernel-abi-rv64ilp32):
     kasan : 0x80000000 - 0x8fffffff   ( 256 MB)
    kernel : 0xbc000000 - 0xbfffffff   (  64 MB)
 
-Virtual kernel memory layout (kernel-abi-lp64):
+Virtual kernel memory layout (lp64-abi-kernel):
    fixmap : 0xffffffc4fea00000 - 0xffffffc4feffffff   (6144 kB)
    pci io : 0xffffffc4ff000000 - 0xffffffc4ffffffff   (  16 MB)
   vmemmap : 0xffffffc500000000 - 0xffffffc5ffffffff   (4096 MB)
@@ -350,9 +366,9 @@ are rare:
 
  - CONFIG_PAGE_OFFSET		Change to 0xc0000000.
  - CONFIG_ILLEGAL_POINTER_VALUE	Change to 0x0.
- - CONFIG_ABI_RV64ILP32: 	Compile option depends on CONFIG_64BIT.
- - CONFIG_HAVE_CMPXCHG_DOUBLE:	The kernel-abi-rv64ilp32 offers new feature.
- - CONFIG_ZONE_DMA32:		It's unnecessary for rv64ilp32 kernel.
+ - CONFIG_ABI_RV64ILP32		Compile option depends on CONFIG_64BIT.
+ - CONFIG_HAVE_CMPXCHG_DOUBLE	The kernel-rv64ilp32-abi offers new feature.
+ - CONFIG_ZONE_DMA32		It's unnecessary for rv64ilp32 kernel.
  - CONFIG_CSD_LOCK_WAIT_DEBUG	Because of BITS_PER_LONG = 32, rv64ilp32
 				doesn't support.
 
@@ -485,8 +501,7 @@ $ diff rv64lp64.log rv64ilp32.log
 References
 ==========
 [1] https://github.com/riscv-non-isa/riscv-elf-psabi-doc/pull/381
-[2] https://github.com/ruyisdk/riscv-gnu-toolchain-rv64ilp32/releases/
-
+[2] https://github.com/ruyisdk/riscv-gnu-toolchain-rv64ilp32/releases/tag/2025.03.24
 
 Changelog
 =========
