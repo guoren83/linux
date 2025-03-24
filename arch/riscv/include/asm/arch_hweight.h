@@ -12,7 +12,11 @@
 #if (BITS_PER_LONG == 64)
 #define CPOPW	"cpopw "
 #elif (BITS_PER_LONG == 32)
+#ifdef CONFIG_64BIT
+#define CPOPW	"cpopw "
+#else
 #define CPOPW	"cpop "
+#endif
 #else
 #error "Unexpected BITS_PER_LONG"
 #endif
@@ -47,7 +51,7 @@ static inline unsigned int __arch_hweight8(unsigned int w)
 	return __arch_hweight32(w & 0xff);
 }
 
-#if BITS_PER_LONG == 64
+#ifdef CONFIG_64BIT
 static __always_inline unsigned long __arch_hweight64(__u64 w)
 {
 # ifdef CONFIG_RISCV_ISA_ZBB
@@ -61,7 +65,7 @@ static __always_inline unsigned long __arch_hweight64(__u64 w)
 	     ".option pop\n"
 	     : "=r" (w) : "r" (w) :);
 
-	return w;
+	return (unsigned long)w;
 
 legacy:
 # endif
