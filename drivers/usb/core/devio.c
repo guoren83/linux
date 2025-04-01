@@ -2134,7 +2134,7 @@ static int proc_reapurbnonblock(struct usb_dev_state *ps, void __user *arg)
 	return retval;
 }
 
-#ifdef CONFIG_COMPAT
+#if (BITS_PER_LONG == 64) && defined(CONFIG_COMPAT)
 static int proc_control_compat(struct usb_dev_state *ps,
 				struct usbdevfs_ctrltransfer32 __user *p32)
 {
@@ -2403,7 +2403,7 @@ static int proc_ioctl_default(struct usb_dev_state *ps, void __user *arg)
 	return proc_ioctl(ps, &ctrl);
 }
 
-#ifdef CONFIG_COMPAT
+#if (BITS_PER_LONG == 64) && defined(CONFIG_COMPAT)
 static int proc_ioctl_compat(struct usb_dev_state *ps, compat_uptr_t arg)
 {
 	struct usbdevfs_ioctl32 ioc32;
@@ -2622,7 +2622,7 @@ static long usbdev_do_ioctl(struct file *file, unsigned int cmd,
 		ret = proc_reapurbnonblock(ps, p);
 		goto done;
 
-#ifdef CONFIG_COMPAT
+#if (BITS_PER_LONG == 64) && defined(CONFIG_COMPAT)
 	case USBDEVFS_REAPURB32:
 		snoop(&dev->dev, "%s: REAPURB32\n", __func__);
 		ret = proc_reapurb_compat(ps, p);
@@ -2706,7 +2706,7 @@ static long usbdev_do_ioctl(struct file *file, unsigned int cmd,
 					      inode_set_ctime_current(inode));
 		break;
 
-#ifdef CONFIG_COMPAT
+#if (BITS_PER_LONG == 64) && defined(CONFIG_COMPAT)
 	case USBDEVFS_CONTROL32:
 		snoop(&dev->dev, "%s: CONTROL32\n", __func__);
 		ret = proc_control_compat(ps, p);
