@@ -5071,13 +5071,13 @@ int btrfs_uring_cmd(struct io_uring_cmd *cmd, unsigned int issue_flags)
 {
 	switch (cmd->cmd_op) {
 	case BTRFS_IOC_ENCODED_READ:
-#if (BITS_PER_LONG == 64) && defined(CONFIG_COMPAT)
+#if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
 	case BTRFS_IOC_ENCODED_READ_32:
 #endif
 		return btrfs_uring_encoded_read(cmd, issue_flags);
 
 	case BTRFS_IOC_ENCODED_WRITE:
-#if (BITS_PER_LONG == 64) && defined(CONFIG_COMPAT)
+#if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
 	case BTRFS_IOC_ENCODED_WRITE_32:
 #endif
 		return btrfs_uring_encoded_write(cmd, issue_flags);
@@ -5315,7 +5315,7 @@ long btrfs_ioctl(struct file *file, unsigned int
 #endif
 	case BTRFS_IOC_SEND:
 		return _btrfs_ioctl_send(BTRFS_I(inode), argp, false);
-#if (BITS_PER_LONG == 64) && defined(CONFIG_COMPAT)
+#if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
 	case BTRFS_IOC_SEND_32:
 		return _btrfs_ioctl_send(BTRFS_I(inode), argp, true);
 #endif
@@ -5359,7 +5359,7 @@ long btrfs_ioctl(struct file *file, unsigned int
 		return btrfs_ioctl_encoded_read(file, argp, false);
 	case BTRFS_IOC_ENCODED_WRITE:
 		return btrfs_ioctl_encoded_write(file, argp, false);
-#if (BITS_PER_LONG == 64) && defined(CONFIG_COMPAT)
+#if defined(CONFIG_64BIT) && defined(CONFIG_COMPAT)
 	case BTRFS_IOC_ENCODED_READ_32:
 		return btrfs_ioctl_encoded_read(file, argp, true);
 	case BTRFS_IOC_ENCODED_WRITE_32:
