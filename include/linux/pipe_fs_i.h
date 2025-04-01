@@ -38,7 +38,7 @@ struct pipe_buffer {
  * and it makes 'head_tail' always be a simple
  * 'unsigned long'.
  */
-#ifdef CONFIG_64BIT
+#if BITS_PER_LONG == 64
 typedef unsigned int pipe_index_t;
 #else
 typedef unsigned short pipe_index_t;
