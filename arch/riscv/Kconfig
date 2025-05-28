@@ -265,6 +265,10 @@ config RISCV_USER_CFI
 	  space does not get protection "for free".
 	  default y
 
+config RISCV_CHERIVTAG
+	def_bool y
+	bool "riscv userspace cheri valid tags' CSR"
+
 config ARCH_MMAP_RND_BITS_MIN
 	default 18 if 64BIT
 	default 8

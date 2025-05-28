@@ -161,6 +161,22 @@ SYM_CODE_START(handle_exception)
 				0,
 				RISCV_ISA_EXT_ZICFISS,
 				CONFIG_RISCV_USER_CFI)
+
+	/*
+	 * If previous mode was U, capture cheri valid tags and save it away
+	 * Zero CSR_CHERIVTAG at the same time for sanitization.
+	 */
+	ALTERNATIVE("nop; nop; nop; nop",
+				__stringify(			\
+				andi s2, s1, SR_SPP;	\
+				bnez s2, skip_cherivtag_save;	\
+				csrrw s2, CSR_CHERIVTAG, x0;	\
+				REG_S s2, TASK_TI_CHERIVTAG(tp); \
+				skip_cherivtag_save:),
+				0,
+				RISCV_ISA_EXT_ZICHERIVTAG,
+				CONFIG_RISCV_CHERIVTAG)
+
 	csrr s2, CSR_EPC
 	csrr s3, CSR_TVAL
 	csrr s4, CSR_CAUSE
@@ -261,6 +277,17 @@ SYM_CODE_START_NOALIGN(ret_from_exception)
 				0,
 				RISCV_ISA_EXT_ZICFISS,
 				CONFIG_RISCV_USER_CFI)
+
+	/*
+	 * Going back to U mode, restore cheri valid tags
+	 */
+	ALTERNATIVE("nop; nop",
+				__stringify(					\
+				REG_L s3, TASK_TI_CHERIVTAG(tp); \
+				csrw CSR_CHERIVTAG, s3),
+				0,
+				RISCV_ISA_EXT_ZICHERIVTAG,
+				CONFIG_RISCV_CHERIVTAG)
 
 1:
 #ifdef CONFIG_RISCV_ISA_V_PREEMPTIVE

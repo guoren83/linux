@@ -56,6 +56,9 @@ void asm_offsets(void)
 	OFFSET(TASK_TI_CFI_STATUS, task_struct, thread_info.user_cfi_state);
 	OFFSET(TASK_TI_USER_SSP, task_struct, thread_info.user_cfi_state.user_shdw_stk);
 #endif
+#ifdef CONFIG_RISCV_CHERIVTAG
+	OFFSET(TASK_TI_CHERIVTAG, task_struct, thread_info.cherivtag);
+#endif
 	OFFSET(TASK_THREAD_F0,  task_struct, thread.fstate.f[0]);
 	OFFSET(TASK_THREAD_F1,  task_struct, thread.fstate.f[1]);
 	OFFSET(TASK_THREAD_F2,  task_struct, thread.fstate.f[2]);

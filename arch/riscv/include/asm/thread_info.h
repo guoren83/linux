@@ -60,6 +60,9 @@ struct thread_info {
 #ifdef CONFIG_RISCV_USER_CFI
 	struct cfi_status	user_cfi_state;
 #endif
+#ifdef CONFIG_RISCV_CHERIVTAG
+	unsigned long		cherivtag;
+#endif
 #ifdef CONFIG_SHADOW_CALL_STACK
 	void			*scs_base;
 	void			*scs_sp;

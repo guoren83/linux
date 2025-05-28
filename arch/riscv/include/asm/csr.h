@@ -232,6 +232,12 @@
  */
 #define CSR_SSP                 0x011
 
+/*
+ * zicherivtag supervisor mode csr
+ * CSR_CHERIVTAG holds current userspace cheri valid tags.
+ */
+#define CSR_CHERIVTAG           0x012
+
 /* symbolic CSR names: */
 #define CSR_CYCLE		0xc00
 #define CSR_TIME		0xc01
