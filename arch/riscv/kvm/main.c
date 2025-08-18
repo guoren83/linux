@@ -92,7 +92,8 @@ static int __init riscv_kvm_init(void)
 	if (rc && rc != -ENODEV)
 		return rc;
 
-	kvm_riscv_gstage_mode_detect();
+	if (kvm_riscv_gstage_mode_detect())
+		return -ENODEV;
 
 	kvm_riscv_gstage_vmid_detect();
 
